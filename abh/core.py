@@ -57,6 +57,16 @@ def validate_identifier(value: str, label: str = "identifier") -> None:
         raise AbhError(f"invalid {label}: {value!r}")
 
 
+def list_plans(cwd: Path | None = None) -> list[PlanRecord]:
+    directory = plans_dir(cwd)
+    if not directory.exists():
+        return []
+    plans: list[PlanRecord] = []
+    for path in sorted(directory.glob("*.json")):
+        plans.append(PlanRecord.from_dict(read_json(path)))
+    return plans
+
+
 def require_existing_path(path_text: str, label: str) -> None:
     path = Path(path_text)
     if not path.exists():
@@ -272,6 +282,16 @@ def load_audit(audit_id: str, cwd: Path | None = None) -> AuditRecord:
     return AuditRecord.from_dict(read_json(path))
 
 
+def list_audits(cwd: Path | None = None) -> list[AuditRecord]:
+    directory = audits_dir(cwd)
+    if not directory.exists():
+        return []
+    audits: list[AuditRecord] = []
+    for path in sorted(directory.glob("*.json")):
+        audits.append(AuditRecord.from_dict(read_json(path)))
+    return audits
+
+
 def save_audit(audit: AuditRecord, cwd: Path | None = None, write_doc: bool = True) -> AuditRecord:
     ensure_workspace(cwd)
     audit.updated_at = utc_now()
@@ -482,6 +502,16 @@ def search_memory(
     return results
 
 
+def list_memories(cwd: Path | None = None) -> list[MemoryRecord]:
+    directory = memory_dir(cwd)
+    if not directory.exists():
+        return []
+    memories: list[MemoryRecord] = []
+    for path in sorted(directory.glob("*.json")):
+        memories.append(MemoryRecord.from_dict(read_json(path)))
+    return memories
+
+
 def render_memory_markdown(memory: MemoryRecord) -> str:
     def bullet_lines(values: list[str]) -> str:
         if not values:
@@ -550,9 +580,31 @@ def route_question(question: str) -> dict[str, object]:
     text = question.lower()
     for route_name, route in ROUTES.items():
         if any(keyword.lower() in text for keyword in route["keywords"]):
+            reading_order = list(route["reading_order"])
+            # inject active plans
+            plans = list_plans()
+            active = [p for p in plans if p.status in ("running", "blocked")]
+            if active:
+                reading_order.append("docs/plans/ (active plans)")
+                for p in active:
+                    reading_order.append(f"  -> {p.id} [{p.status}]")
+            # inject recent memories
+            memories = list_memories()
+            question_words = set(text.split())
+            relevant = []
+            for m in memories:
+                mem_text = f"{m.summary} {m.context} {m.implication}".lower()
+                if any(w in mem_text for w in question_words if len(w) > 2):
+                    relevant.append(m)
+            if relevant:
+                reading_order.append("docs/memory/ (relevant memories)")
+                for m in relevant[:5]:
+                    reading_order.append(f"  -> {m.id} [{m.memory_type}]")
+
             return {
                 "route": route_name,
-                "reading_order": list(route["reading_order"]),
+                "reading_order": reading_order,
+                "active_plans": len(active),
                 "rationale": route["rationale"],
             }
     return {
@@ -624,6 +676,7 @@ def analyze_drift(
     source: str,
     evidence: list[str] | None = None,
     memory_id: str | None = None,
+    plan_id: str | None = None,
     cwd: Path | None = None,
 ) -> DriftReport:
     validate_identifier(drift_id, "drift id")
@@ -632,6 +685,34 @@ def analyze_drift(
         raise AbhError(f"drift source not found: {source}")
     source_text = source_path.read_text(encoding="utf-8")
     findings = analyze_drift_text(source_text)
+    # plan-based drift detection
+    if plan_id:
+        plan = load_plan(plan_id, cwd)
+        negation_prefixes = ("不", "不要", "无需", "禁止", "避免", "no ", "not ")
+        lowered = source_text.lower()
+        for non_goal in plan.non_goals:
+            clean = non_goal.lower()
+            for prefix in negation_prefixes:
+                if clean.startswith(prefix):
+                    clean = clean[len(prefix):]
+                    break
+            keywords = [clean] if len(clean) > 2 else []
+            keywords += [w for w in clean.split() if len(w) > 2 and w not in keywords]
+            if not keywords:
+                continue
+            matched = [kw for kw in keywords if kw in lowered]
+            if matched:
+                existing_types = {f.drift_type for f in findings}
+                for dt in DRIFT_TYPES:
+                    if dt not in existing_types:
+                        findings.append(
+                            DriftFinding(
+                                drift_type=dt,
+                                evidence=f"plan non-goal violation: '{non_goal}' matched keywords {matched}",
+                                recommendation=f"Review plan '{plan_id}' non-goal: {non_goal}. Consider updating plan or source.",
+                            )
+                        )
+                        break
     follow_ups = [finding.recommendation for finding in findings]
     report = DriftReport(
         id=drift_id,

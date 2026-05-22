@@ -9,6 +9,9 @@ from .core import (
     analyze_drift,
     close_plan,
     create_plan,
+    list_audits,
+    list_memories,
+    list_plans,
     plan_status_line,
     record_audit,
     record_verification,
@@ -45,6 +48,9 @@ def build_parser() -> argparse.ArgumentParser:
     status.add_argument("plan_id")
     status.set_defaults(handler=handle_plan_status)
 
+    plan_list = plan_sub.add_parser("list", help="list all plans")
+    plan_list.set_defaults(handler=handle_plan_list)
+
     transition = plan_sub.add_parser("transition", help="move plan to another status")
     transition.add_argument("plan_id")
     transition.add_argument("--to", required=True, choices=["draft", "ready", "running", "blocked", "closing", "closed"])
@@ -80,6 +86,9 @@ def build_parser() -> argparse.ArgumentParser:
     audit_record.add_argument("--follow-up", action="append", default=[])
     audit_record.set_defaults(handler=handle_audit_record)
 
+    audit_list = audit_sub.add_parser("list", help="list all audits")
+    audit_list.set_defaults(handler=handle_audit_list)
+
     close = subparsers.add_parser("close", help="close a plan after passing audit")
     close.add_argument("plan_id")
     close.set_defaults(handler=handle_close)
@@ -103,6 +112,9 @@ def build_parser() -> argparse.ArgumentParser:
     memory_search.add_argument("--query")
     memory_search.set_defaults(handler=handle_memory_search)
 
+    memory_list = memory_sub.add_parser("list", help="list all memory records")
+    memory_list.set_defaults(handler=handle_memory_list)
+
     route = subparsers.add_parser("route", help="recommend reading order for a question")
     route.add_argument("--question", required=True)
     route.set_defaults(handler=handle_route)
@@ -115,6 +127,7 @@ def build_parser() -> argparse.ArgumentParser:
     drift_analyze.add_argument("--source", required=True)
     drift_analyze.add_argument("--evidence", action="append", default=[])
     drift_analyze.add_argument("--memory-id")
+    drift_analyze.add_argument("--plan")
     drift_analyze.set_defaults(handler=handle_drift_analyze)
 
     return parser
@@ -150,6 +163,16 @@ def handle_plan_status(args: argparse.Namespace) -> int:
 def handle_plan_transition(args: argparse.Namespace) -> int:
     transition_plan(args.plan_id, args.to)
     print(f"transitioned {args.plan_id} -> {args.to}")
+    return 0
+
+
+def handle_plan_list(args: argparse.Namespace) -> int:
+    plans = list_plans()
+    for plan in plans:
+        runs = len(plan.verification_runs)
+        audits = len(plan.audit_ids)
+        print(f"{plan.id}  [{plan.status}]  {plan.title}  (verifications: {runs}, audits: {audits})")
+    print(f"\ntotal: {len(plans)} plan(s)")
     return 0
 
 
@@ -189,6 +212,16 @@ def handle_audit_record(args: argparse.Namespace) -> int:
     return 0
 
 
+def handle_audit_list(args: argparse.Namespace) -> int:
+    audits = list_audits()
+    for audit in audits:
+        status_info = f" [{audit.status}]" if audit.status == "complete" else ""
+        result_info = f" result={audit.result}" if audit.status == "complete" else ""
+        print(f"{audit.id}  -> {audit.plan_id}{status_info}{result_info}")
+    print(f"\ntotal: {len(audits)} audit(s)")
+    return 0
+
+
 def handle_close(args: argparse.Namespace) -> int:
     plan = close_plan(args.plan_id)
     print(f"closed plan {plan.id}")
@@ -217,6 +250,15 @@ def handle_memory_search(args: argparse.Namespace) -> int:
     return 0
 
 
+def handle_memory_list(args: argparse.Namespace) -> int:
+    memories = list_memories()
+    for mem in memories:
+        evidence_count = len(mem.evidence)
+        print(f"{mem.id}  [{mem.memory_type}]  {mem.summary}  (evidence: {evidence_count})")
+    print(f"\ntotal: {len(memories)} memory record(s)")
+    return 0
+
+
 def handle_route(args: argparse.Namespace) -> int:
     result = route_question(args.question)
     print(f"Route: {result['route']}")
@@ -233,6 +275,7 @@ def handle_drift_analyze(args: argparse.Namespace) -> int:
         source=args.source,
         evidence=args.evidence,
         memory_id=args.memory_id,
+        plan_id=args.plan,
     )
     print(f"drift report {report.id}")
     for finding in report.findings:

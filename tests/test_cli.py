@@ -346,3 +346,128 @@ class CliTests(TestCase):
         )
         self.assertEqual(code, 0, err)
         self.assertIn("mem-drift-001 [divergent_pattern]", out)
+
+    def test_plan_list_returns_all_plans(self) -> None:
+        self.run_cli(
+            "plan", "create",
+            "--id", "plan-list-a",
+            "--title", "Plan A for list test",
+            "--attractor", "docs/architecture/attractors/abh-core-attractor.md",
+            "--baseline", "baseline",
+        )
+        self.run_cli(
+            "plan", "create",
+            "--id", "plan-list-b",
+            "--title", "Plan B for list test",
+            "--attractor", "docs/architecture/attractors/abh-core-attractor.md",
+            "--baseline", "baseline",
+        )
+        code, out, err = self.run_cli("plan", "list")
+        self.assertEqual(code, 0, err)
+        self.assertIn("plan-list-a  [draft]  Plan A for list test", out)
+        self.assertIn("plan-list-b  [draft]  Plan B for list test", out)
+        self.assertIn("total: 2 plan(s)", out)
+
+    def test_memory_list_returns_all_memories(self) -> None:
+        self.run_cli(
+            "memory", "add",
+            "--id", "mem-list-a",
+            "--type", "false_assumption",
+            "--summary", "list test assumption",
+            "--context", "testing memory list",
+            "--implication", "list works",
+            "--evidence", "tests/test_cli.py",
+        )
+        self.run_cli(
+            "memory", "add",
+            "--id", "mem-list-b",
+            "--type", "rejected_path",
+            "--summary", "another list test",
+            "--context", "testing memory list again",
+            "--implication", "list works twice",
+            "--evidence", "tests/test_cli.py",
+        )
+        code, out, err = self.run_cli("memory", "list")
+        self.assertEqual(code, 0, err)
+        self.assertIn("mem-list-a  [false_assumption]  list test assumption", out)
+        self.assertIn("mem-list-b  [rejected_path]  another list test", out)
+        self.assertIn("total: 2 memory record(s)", out)
+
+    def test_audit_list_returns_all_audits(self) -> None:
+        self.create_ready_plan("plan-audit-list")
+        self.run_cli(
+            "audit", "request",
+            "plan-audit-list",
+            "--id", "audit-list-a",
+            "--auditor", "reviewer",
+            "--scope", "test audit list",
+            "--evidence", "tests/test_cli.py",
+        )
+        self.run_cli(
+            "audit", "request",
+            "plan-audit-list",
+            "--id", "audit-list-b",
+            "--auditor", "reviewer",
+            "--scope", "test audit list again",
+            "--evidence", "tests/test_cli.py",
+        )
+        code, out, err = self.run_cli("audit", "list")
+        self.assertEqual(code, 0, err)
+        self.assertIn("audit-list-a  -> plan-audit-list", out)
+        self.assertIn("audit-list-b  -> plan-audit-list", out)
+        self.assertIn("total: 2 audit(s)", out)
+
+    def test_route_injects_active_plans(self) -> None:
+        self.run_cli(
+            "plan", "create",
+            "--id", "plan-route-active",
+            "--title", "Active Plan",
+            "--attractor", "docs/architecture/attractors/abh-core-attractor.md",
+            "--baseline", "baseline",
+            "--status", "ready",
+            "--goal", "test route injection",
+            "--non-goal", "web ui",
+            "--exit-criterion", "route test passes",
+            "--validation", "unit tests pass",
+            "--closure-evidence", "tests/test_cli.py",
+        )
+        self.run_cli(
+            "verify", "record",
+            "plan-route-active",
+            "--command", "python -m pytest",
+            "--result", "pass",
+        )
+        self.run_cli(
+            "plan", "transition", "plan-route-active", "--to", "running",
+        )
+        code, out, err = self.run_cli("route", "--question", "Can we close this plan?")
+        self.assertEqual(code, 0, err)
+        self.assertIn("Route: completion_audit", out)
+        self.assertIn("active plans", out.lower())
+        self.assertIn("plan-route-active", out)
+
+    def test_drift_with_plan_detects_non_goal_violation(self) -> None:
+        drift_source = self.root / "drift-plan.txt"
+        drift_source.write_text("重构存储层并引入外部服务\n", encoding="utf-8")
+        self.run_cli(
+            "plan", "create",
+            "--id", "plan-drift-baseline",
+            "--title", "Drift Baseline Plan",
+            "--attractor", "docs/architecture/attractors/abh-core-attractor.md",
+            "--baseline", "baseline",
+            "--status", "ready",
+            "--goal", "cli commands",
+            "--non-goal", "不重构存储层",
+            "--exit-criterion", "drift test passes",
+            "--validation", "unit tests pass",
+            "--closure-evidence", "tests/test_cli.py",
+        )
+        code, out, err = self.run_cli(
+            "drift", "analyze",
+            "--id", "drift-plan-001",
+            "--source", str(drift_source),
+            "--plan", "plan-drift-baseline",
+        )
+        self.assertEqual(code, 0, err)
+        self.assertIn("boundary_drift", out)
+        self.assertIn("plan non-goal violation", out)
