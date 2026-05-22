@@ -1,0 +1,458 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e5]:
+    - generic [ref=e6]:
+      - 'heading "Attractor Before Harness: AI 大规模开发的方法论" [level=1] [ref=e7]'
+      - generic [ref=e8]:
+        - generic [ref=e9]: 原创
+        - generic [ref=e10]: 可逆计算
+        - link "可逆计算" [ref=e12]:
+          - /url: javascript:void(0);
+        - generic:
+          - emphasis [ref=e13]: 2026年5月21日 08:54
+          - emphasis [ref=e14]: 北京
+      - generic [ref=e16]:
+        - blockquote [ref=e17]:
+          - paragraph [ref=e18]: 在 AI 深度参与开发的系统中，第一性的问题不是"如何约束 AI 的行为"，而是"系统应当收敛到怎样的长期结构"。 只有当这个方向被定义清楚之后，harness、guardrail、verification、audit、closure 这些机制才能真正具有意义。否则，它们不过是在高效地固化一套错误基线。 这个主张之所以是必然的，是因为 AI 协作把软件工程方法论中一个长期被外挂处理的问题——"轨迹收敛"——推到了必须显式建模的位置
+        - heading "一、为什么一谈 AI 工程，大家先想到 Harness" [level=2] [ref=e19]:
+          - generic [ref=e20]: 一、为什么一谈 AI 工程，大家先想到 Harness
+        - paragraph [ref=e21]: 当前讨论 AI 辅助开发时，最常见的说法是：
+        - list [ref=e22]:
+          - listitem [ref=e23]:
+            - code [ref=e25]: guardrail
+          - listitem [ref=e26]:
+            - code [ref=e28]: verification
+          - listitem [ref=e29]:
+            - code [ref=e31]: review
+          - listitem [ref=e32]:
+            - code [ref=e34]: feedback loop
+          - listitem [ref=e35]:
+            - code [ref=e37]: agent harness
+        - paragraph [ref=e38]: 这套直觉默认了一个前提：
+        - paragraph [ref=e39]:
+          - strong [ref=e40]: 系统正确的方向是已知的。
+        - paragraph [ref=e41]: 在此前提下，问题自然变成：
+        - list [ref=e42]:
+          - listitem [ref=e43]:
+            - generic [ref=e44]: 怎么限制偏离
+          - listitem [ref=e45]:
+            - generic [ref=e46]: 如何尽早暴露失败
+          - listitem [ref=e47]:
+            - generic [ref=e48]: 怎么让 review 更严
+          - listitem [ref=e49]:
+            - generic [ref=e50]: 怎么防止 agent 胡来
+        - paragraph [ref=e51]: 这套语言在小任务里是够用的。一个脚本、一页 CRUD、一个局部 bug 修复，大多数时候你已经知道"对的结果长什么样"，剩下的主要是执行和验证问题。
+        - paragraph [ref=e52]: 但大型系统真正困难的地方，往往不是"怎么防止越线"，而是"到底哪条路才是长期正确的结构"。
+        - paragraph [ref=e53]:
+          - text: 要回答这个问题，必须先看清一件事：
+          - strong [ref=e54]: 当前所有这些 harness 类机制，都建立在一个隐含前提上——评价单位以状态为主，轨迹收敛靠人的隐性方向感兜底
+          - text: 。而 AI 协作恰好把这个兜底机制抽走了。
+        - heading "二、被抽走的兜底机制" [level=2] [ref=e55]:
+          - generic [ref=e56]: 二、被抽走的兜底机制
+        - paragraph [ref=e57]: 打开任何主流工程方法论——TDD、DDD、Clean Architecture、Agile、Code Review 文化——它们的一等公民评价对象几乎都是状态：
+        - list [ref=e58]:
+          - listitem [ref=e59]:
+            - generic [ref=e60]: 评价"这次 PR 对不对"，不评价"过去 100 次 PR 累积出的方向对不对"
+          - listitem [ref=e61]:
+            - generic [ref=e62]: 评价"当前架构是否清晰"，不评价"架构在演化中是否被持续推向某种稳定形态"
+          - listitem [ref=e63]:
+            - generic [ref=e64]: 评价"测试是否覆盖当前行为"，不评价"测试套件本身是否被实现细节腐蚀"
+        - paragraph [ref=e65]:
+          - text: 传统方法论并非完全没有轨迹意识——重构、技术债务、坏味道、演进式架构、Lehman 软件演化定律都涉及轨迹。但这些概念在体系里的地位是
+          - strong [ref=e66]: 修正机制和诊断词汇
+          - text: ，而不是基础对象。一个理论需要不断引入"债务""脆弱性""腐蚀"这类否定性概念来追认轨迹问题，恰恰反映出它的基础范畴集里没有正面的轨迹对象。
+        - paragraph [ref=e67]: 这套以状态为主的范式之所以长期够用，是因为人类工程师本身就是低频、稳定方向感的扰动源。一个人一天写几百行代码，每次扰动幅度小，且脑子里持续有方向。状态层质量保证 + 程序员的隐性方向感，合起来就能保证轨迹不漂移。
+        - paragraph [ref=e68]:
+          - text: AI 协作把这个兜底机制抽走了。AI 不是更快的程序员，而是
+          - strong [ref=e69]: 结构上不同的扰动源
+          - text: ：
+        - list [ref=e70]:
+          - listitem [ref=e71]:
+            - generic [ref=e72]:
+              - strong [ref=e73]: 高频
+              - text: ：一个 session 可能在几分钟内生成数百行涉及多模块的代码
+          - listitem [ref=e74]:
+            - generic [ref=e75]:
+              - strong [ref=e76]: 高幅度
+              - text: ：每次生成都可能引入跨边界的结构性变更
+          - listitem [ref=e77]:
+            - generic [ref=e78]:
+              - strong [ref=e79]: 无持续方向感
+              - text: ：每个 session 独立，没有跨 session 的隐性架构判断
+          - listitem [ref=e80]:
+            - generic [ref=e81]:
+              - strong [ref=e82]: 局部高度合理
+              - text: ：接口、类型、测试、文档可以同时给出，每一项单独看都过得了检查
+        - paragraph [ref=e83]:
+          - text: 最后一条是关键。
+          - strong [ref=e84]: 在 AI 协作中，所有状态层检查都能通过，但系统整体可以在持续漂移
+          - text: 。
+        - paragraph [ref=e85]:
+          - code [ref=e86]: nop-chaos-flux
+          - text: 的 Plan 76 是个典型例子。一次尝试移除
+          - code [ref=e87]: array-editor
+          - text: /
+          - code [ref=e88]: key-value
+          - text: 的本地状态镜像，直接引出 11 个测试失败。但暴露的不是某个 bug，而是更深的事实：
+          - strong [ref=e89]: 测试本身已经与旧实现的时序紧密耦合
+          - text: 。从状态视角看，每一次累积修改都通过了 review 和 CI；从轨迹视角看，测试套件已经在不知不觉中漂移到了一个无法支撑结构演进的位置。
+        - paragraph [ref=e90]:
+          - text: 传统理论里有"测试脆弱性"这个
+          - strong [ref=e91]: 症状名
+          - text: ——但症状名是截面诊断，它不命名"100 次合法提交累积出脆弱性"这个过程。轨迹问题是过程问题，过程问题需要过程语言。
+        - paragraph [ref=e92]:
+          - text: 所以问题不是 AI 让旧问题变严重了，而是 AI 把轨迹问题从
+          - strong [ref=e93]: 偶发的修补对象
+          - text: 推向
+          - strong [ref=e94]: 高频的一等公民对象
+          - text: 。要让这类问题进入方法论的视野，工程方法论必须把"轨迹"作为基础范畴。
+        - heading "三、动力系统语言：把轨迹问题显式化" [level=2] [ref=e95]:
+          - generic [ref=e96]: 三、动力系统语言：把轨迹问题显式化
+        - paragraph [ref=e97]:
+          - text: 在数学物理中，
+          - strong [ref=e98]: 动力系统
+          - text: 指的是一个状态会随时间持续演化、并且下一步状态依赖当前状态的系统。我们关心的不只是某一个时刻对不对，而是它在时间中会走出什么样的
+          - strong [ref=e99]: 轨迹
+          - text: 。
+        - paragraph [ref=e100]: 放到 AI 大规模开发里，这套语言对应四个相互定义的基础对象：
+        - list [ref=e101]:
+          - listitem [ref=e102]:
+            - generic [ref=e103]:
+              - strong [ref=e104]: 状态空间
+              - text: ：系统在当前约束下所有可能演化到的实现状态
+          - listitem [ref=e105]:
+            - generic [ref=e106]:
+              - strong [ref=e107]: 吸引子
+              - text: ：系统在长期演化中反复被拉回的稳定结构
+          - listitem [ref=e108]:
+            - generic [ref=e109]:
+              - strong [ref=e110]: 轨迹
+              - text: ：每一轮生成、验证、纠偏之后真实留下来的演化路径
+          - listitem [ref=e111]:
+            - generic [ref=e112]:
+              - strong [ref=e113]: 控制
+              - text: ：通过局部信号持续影响轨迹的各种机制
+        - paragraph [ref=e114]: 仓库在现有约束下可能演变出的所有代码、文档和测试组合，构成了状态空间；人、AI、review、CI 以及文档更新等持续作用，构成了演化规则；二者叠加形成的 live repo 历史，就是轨迹；而 attractor，则是系统在长期迭代中反复被拉回的那个稳定结构。
+        - paragraph [ref=e115]:
+          - strong [ref=e116]: 这里需要明确一点：这套语言不是"换个更优雅的说法"，而是新本体论的基础语言
+          - text: 。状态空间、吸引子、轨迹、控制四个概念相互定义，缺一个其他三个就无法严格表达。试图用旧本体论的语言（架构、约束、目标、流程）翻译这些概念，必然产生信息损失——这正是"Attractor Guided Engineering 不还是 Harness 吗"这类误读的根源。
+        - paragraph [ref=e117]: 四个对象的关系是：
+        - paragraph [ref=e118]:
+          - strong [ref=e119]: 状态空间 → 吸引子 → 轨迹 → 控制
+        - paragraph [ref=e120]:
+          - strong [ref=e121]: 这不是修辞排序，是逻辑依赖
+          - text: 。状态空间不定义就谈不上吸引子；吸引子不定义就无法判断轨迹是否在漂移；轨迹判断不存在，控制就没有目标。
+        - paragraph [ref=e122]:
+          - text: 这里的 "before" 指
+          - strong [ref=e123]: 逻辑上的优先
+          - text: ：执行上 attractor 和 harness 在闭环中共演化，但 attractor 在概念上可以脱离 harness 被定义，harness 在概念上无法脱离 attractor 被定义（纠偏纠向哪里？）。这种不对称对应于动力系统中的目标因 vs 动力因关系——承认共演化不削弱 "before" 主张，目标因和动力因在物理系统里同样共同作用，但目标因仍然是动力因的逻辑前提。
+        - heading "四、吸引子到底是什么" [level=2] [ref=e124]:
+          - generic [ref=e125]: 四、吸引子到底是什么
+        - paragraph [ref=e126]: 以广为人知的 Lorenz 吸引子为例，它由微分方程隐式定义，它不是把所有正确轨迹预先列出来的清单，也不是一个简单的边界。吸引子中局部轨迹非常复杂，短期看上去近乎混沌，但整体并不是随机乱飞，而是始终被拉回同一类几何形态。
+        - img "图片" [ref=e128]
+        - figure [ref=e129]
+        - paragraph [ref=e130]:
+          - emphasis [ref=e131]: Lorenz attractor：局部轨迹高度复杂，整体仍被稳定结构约束。混沌不等于随机；局部不可预测，不等于整体失控。
+        - paragraph [ref=e132]: 工程里的 attractor 也一样。**它更像"方程定义流形"，而不是"把所有合法点一一列出来"**。方程不会提前写出流形上的每一个点，它只规定哪些关系必须成立；满足这些关系的点，自然落在同一个结构里。
+        - paragraph [ref=e133]:
+          - strong [ref=e134]: 与传统架构概念的关键差异
+          - text: ：DDD、Clean Architecture 同样强调长期结构，但它们把长期结构当作
+          - strong [ref=e135]: 目标状态
+          - text: ——方法论的工作是"达到 X"。轨迹本体论把长期结构当作
+          - strong [ref=e136]: 吸引子
+          - text: ——方法论的工作是"无论被推开多远都能回到 X 附近"。
+          - strong [ref=e137]: 第二种视角处理的是扰动下的稳定性
+          - text: 。这正是 AI 协作场景的核心问题，也是传统方法论没有一等公民概念工具处理的问题。
+        - paragraph [ref=e138]: 为避免概念漂移，attractor 在工程中可以严格分三层：
+        - list [ref=e139]:
+          - listitem [ref=e140]:
+            - generic [ref=e141]:
+              - strong [ref=e142]: 结构层（attractor 本身）
+              - text: ：少量高阶不变量，比如职责怎么分、边界怎么立、哪些结构关系不能被破坏
+          - listitem [ref=e143]:
+            - generic [ref=e144]:
+              - strong [ref=e145]: 承载层（attractor 的工程载体）
+              - text: ：把这些不变量外化为可版本化、可审计的文档
+          - listitem [ref=e146]:
+            - generic [ref=e147]:
+              - strong [ref=e148]: 实现层（attractor 的瞬时投影）
+              - text: ：当前代码中实际体现这些不变量的部分
+        - paragraph [ref=e149]:
+          - strong [ref=e150]: attractor 不是文档，文档是 attractor 的承载；attractor 不是代码，代码是 attractor 的瞬时投影
+          - text: 。
+        - paragraph [ref=e151]: 这种分层之所以重要，是因为它解决了一个常见困惑："architecture doc 和代码冲突时听谁的？"答案不是"哪个更权威"，而是"问什么问题"：问当前实现行为，代码权威；问系统应向哪里收敛，文档权威；问某条路径为什么被放弃，logs/bugs/analysis 权威。每一层只在它对应的问题上是权威。
+        - heading "五、仓库开始承担系统真相，Harness 因而成为基础设施" [level=2] [ref=e152]:
+          - generic [ref=e153]: 五、仓库开始承担系统真相，Harness 因而成为基础设施
+        - paragraph [ref=e154]: AI 深度参与以后，仓库不再只是人类认知的外部投射，而开始成为系统唯一真相的载体。不再有人完整掌握系统中的设计细节，没有人能在不查看项目源码的情况下回答关于系统设计的问题。下一个 session 能重新读取的，不是作者脑中的完整意图，而是代码、diff、日志、测试和文档。
+        - paragraph [ref=e155]: 这带来一个直接的工程后果：
+        - paragraph [ref=e156]:
+          - strong [ref=e157]: 生成和验收必须被真正分离。
+        - paragraph [ref=e158]: 生成动作可以在同一个上下文里由 AI 高速完成，但验收已经不能再依赖那个生成上下文本身。你必须回到仓库里的外部证据，重新判断：
+        - list [ref=e159]:
+          - listitem [ref=e160]:
+            - generic [ref=e161]: 行为是不是真的落地了
+          - listitem [ref=e162]:
+            - generic [ref=e163]: 当前基线到底是什么
+          - listitem [ref=e164]:
+            - generic [ref=e165]: 哪些材料是权威的
+          - listitem [ref=e166]:
+            - generic [ref=e167]: 这次"完成"是不是只是一种完成感
+        - paragraph [ref=e168]: 正是由于仓库开始承载系统真相，生成与评估才必须分离；也正是由于生成与评估分离，harness 才从一种"更稳妥的工程习惯"升级为必要的基础设施。
+        - paragraph [ref=e169]:
+          - strong [ref=e170]: 在传统协作中，harness 是可选纪律；在 AI 协作中，harness 是让轨迹判断成为可能的必要条件
+          - text: 。原因在于：AI 在生成代码的同时，也在生成判断这段代码是否正确的所有材料——类型、测试、文档、完成总结都是同一个上下文基于同一套理解一起产出的。如果这套理解本身偏了，所有"验证证据"会一致地偏在同一方向，互相不矛盾，但整体错了。这种
+          - strong [ref=e171]: 自我验证陷阱
+          - text: 在人类协作中被自然削弱——CI 规则、reviewer、规范文档都是独立于本次生成动作的外部标准，由不同认知主体维护。AI 协作打破了这种独立性，所以必须用工程手段——fresh session、独立 audit、回到 live repo 取证——人为重建生成和验收的分离。
+        - paragraph [ref=e172]: 在 repo truth 条件下：
+        - list [ref=e173]:
+          - listitem [ref=e174]:
+            - generic [ref=e175]:
+              - code [ref=e176]: test / lint / audit
+              - text: 更像测量
+          - listitem [ref=e177]:
+            - generic [ref=e178]:
+              - code [ref=e179]: owner doc / plan / closure
+              - text: 更像约束
+          - listitem [ref=e180]:
+            - generic [ref=e181]:
+              - code [ref=e182]: logs / bugs / discussions
+              - text: 更像轨迹记录和外部化记忆
+        - heading "六、三个最容易发生的本体论混淆" [level=2] [ref=e183]:
+          - generic [ref=e184]: 六、三个最容易发生的本体论混淆
+        - paragraph [ref=e185]:
+          - text: 第一，
+          - strong [ref=e186]: 把 attractor 当作边界
+          - text: 。
+        - paragraph [ref=e187]: 边界回答"什么不能做"，违反它立即引起错误。Attractor 回答"系统应向哪里长期收敛"，单次违反不一定引起错误，但持续偏离会让结构腐烂。边界定义禁区，吸引子定义稳定区。混淆这两者，会把吸引子降格为更严格的护栏，错过它处理"扰动下稳定性"的核心能力。
+        - paragraph [ref=e188]:
+          - text: 第二，
+          - strong [ref=e189]: 把 attractor 当作更强的护栏
+          - text: 。
+        - paragraph [ref=e190]: 护栏在执行层（每次动作都被检查），attractor 在方向层（多次动作累积是否向其靠拢）。把它理解成更严格的治理、更密的约束、更强的审计，仍然是把首要问题降格到控制层。这种降格的根源是没意识到二者属于不同层级。
+        - paragraph [ref=e191]:
+          - text: 第三，
+          - strong [ref=e192]: 把 attractor 当作控制目标的另一种说法
+          - text: 。
+        - paragraph [ref=e193]:
+          - code [ref=e194]: control target
+          - text: 这个词看起来很接近，但它默认控制框架已经成立。在轨迹本体论下，attractor 的角色是
+          - strong [ref=e195]: 为控制提供目标因
+          - text: ——它在控制之前，不在控制之中。如果没有先定义 attractor，所谓控制就没有目标，harness、guardrail、verification、audit 这些机制也没有统一含义。
+        - heading "七、在 nop-chaos-flux 的仓库里，Attractor 首先是 docs/architecture/" [level=2] [ref=e196]:
+          - generic [ref=e197]:
+            - text: 七、在 nop-chaos-flux 的仓库里，Attractor 首先是
+            - code [ref=e198]: docs/architecture/
+        - paragraph [ref=e199]:
+          - text: 如果 attractor 只停留在抽象层面，它就还没有真正的工程意义。对
+          - code [ref=e200]: nop-chaos-flux
+          - text: 来说，首先承担 attractor 的，是
+          - strong [ref=e201]:
+            - code [ref=e202]: docs/architecture/
+            - text: 中带 precedence 的 owner-doc 体系
+          - text: 。
+        - paragraph [ref=e203]:
+          - text: 在本仓库里，工程落点很明确：
+          - code [ref=e204]: docs/architecture/
+          - text: 下的规范定义在前，plan、verification、audit、logs 等收敛机制在后。
+        - paragraph [ref=e205]:
+          - text: 在
+          - code [ref=e206]: docs/architecture/
+          - text: 内部，这种"方程层"也有明确 precedence：
+        - list [ref=e207]:
+          - listitem [ref=e208]:
+            - generic [ref=e209]:
+              - code [ref=e210]: docs/architecture/README.md
+              - text: 负责说明 architecture hierarchy 和 reading order
+          - listitem [ref=e211]:
+            - generic [ref=e212]:
+              - code [ref=e213]: flux-design-principles.md
+              - text: 负责方向层，解释设计意图和稳定原则
+          - listitem [ref=e214]:
+            - generic [ref=e215]:
+              - code [ref=e216]: frontend-programming-model.md
+              - text: 负责顶层规范层，定义 primitive identity、macro boundary 和 hard invariants
+          - listitem [ref=e217]:
+            - generic [ref=e218]:
+              - code [ref=e219]: flux-core.md
+              - text: 负责当前 codebase-wide baseline
+          - listitem [ref=e220]:
+            - generic [ref=e221]: 更窄的 architecture doc 在各自主题内定义局部 contract
+        - paragraph [ref=e222]:
+          - text: 在
+          - code [ref=e223]: nop-chaos-flux
+          - text: 里，attractor 的结构层不是抽象的"正确架构"，而是由少数高价值不变量共同定义的：七个原语闭合集、编译优先的流水线、Template/Instance 分离、Data/Capability 正交、统一 renderer/hook contract，以及
+          - code [ref=e224]: flux-core → flux-formula → flux-compiler → flux-action-core → flux-runtime → flux-react
+          - text: 的依赖方向。
+        - paragraph [ref=e225]: 它们不是并列的治理材料，而是 owner docs 固定下来的结构方程。架构的价值不在于描述一切，而在于让错误结构无法继续合法存在。
+        - paragraph [ref=e226]: 也正因为如此，这个仓库里很多真正重要的收敛动作，最后都会表现成"某个旧结构被排除出合法状态空间"。
+        - paragraph [ref=e227]:
+          - code [ref=e228]: CompiledSchemaNode
+          - text: 被最终移除，就是一个典型例子。它不是单纯的重构清理，而是说明：模板/实例分离这条新基线成立之后，旧的中间结构虽然还能工作，但已经不再属于正确结构，于是被排除出去。
+        - paragraph [ref=e229]:
+          - text: 同样，
+          - code [ref=e230]: flux-compiler
+          - text: /
+          - code [ref=e231]: flux-action-core
+          - text: /
+          - code [ref=e232]: flux-runtime
+          - text: 三层拆分也不是"多拆了两个包"这么简单，而是 attractor 变得更精确了：系统不只是"能跑"，而是被进一步收敛到更稳定的职责结构。
+        - heading "八、什么是 Harness" [level=2] [ref=e233]:
+          - generic [ref=e234]: 八、什么是 Harness
+        - paragraph [ref=e235]: 如果 attractor 解决的是"方向是什么"，那么 harness 解决的是：
+        - paragraph [ref=e236]:
+          - strong [ref=e237]: 如何通过局部信号，持续地测量、纠偏、更新系统轨迹。
+        - paragraph [ref=e238]: 这里说的 harness，不是狭义的测试 harness，而是更广义的执行支架。它通常包括：上下文路由、实现与验收分离、计划与关闭条件、验证机制、审计机制、诊断工具、外部化记忆。
+        - paragraph [ref=e239]: 放到这个仓库里，至少可以看到五层 harness：
+        - heading "1. 路由 harness" [level=3] [ref=e240]:
+          - generic [ref=e241]: 1. 路由 harness
+        - paragraph [ref=e242]:
+          - code [ref=e243]: docs/index.md
+          - text: 和
+          - code [ref=e244]: docs/architecture/README.md
+          - text: 决定：碰到什么问题先读什么，什么是 current baseline，什么只是 analysis、plan 或 history。
+        - heading "2. Plan harness" [level=3] [ref=e245]:
+          - generic [ref=e246]: 2. Plan harness
+        - paragraph [ref=e247]:
+          - code [ref=e248]: docs/plans/
+          - text: 解决的是"这一轮扩张如何收口"，不是"系统是什么"。
+        - paragraph [ref=e249]:
+          - code [ref=e250]: current baseline
+          - text: 、
+          - code [ref=e251]: goals / non-goals
+          - text: 、
+          - code [ref=e252]: exit criteria
+          - text: 、
+          - code [ref=e253]: validation checklist
+          - text: 、
+          - code [ref=e254]: closure audit evidence
+          - text: 这些字段定义的是局部轨迹怎样才能有效闭合。
+        - paragraph [ref=e255]: Plan 145 在 closure/audit 之后把新确认的跟进面拆到 Plan 146，Plan 143 的 closure assumption 被 fresh audit 连续推翻，直到 live repo 真正过线后才允许关闭。Plan 在这里不是待办列表，而是局部的收敛机制——它不是把"现在有哪些事要做"列出来，而是规定这一轮扩张要收口到哪里、满足什么退出条件、closure 需要哪些独立证据。
+        - heading "3. Verification harness" [level=3] [ref=e256]:
+          - generic [ref=e257]: 3. Verification harness
+        - paragraph [ref=e258]:
+          - code [ref=e259]: lint
+          - text: 、
+          - code [ref=e260]: check
+          - text: 、
+          - code [ref=e261]: typecheck
+          - text: 、
+          - code [ref=e262]: build
+          - text: 、
+          - code [ref=e263]: test
+          - text: 把高频、明确、可自动化的偏离检测提前到机器层。
+        - heading "4. Audit harness" [level=3] [ref=e264]:
+          - generic [ref=e265]: 4. Audit harness
+        - paragraph [ref=e266]: 并非所有偏离都能被自动化规则抓住。更高层的语义漂移、结构偏差、假完成、局部自洽但整体失真的问题，仍然需要独立审计。
+        - paragraph [ref=e267]: 审计本身也是一个闭环：发现偏离点、过滤冲突和伪问题、再回到 live repo 确认。高质量审计的重点不是堆出更多问题，而是尽快排除不成立的问题。
+        - paragraph [ref=e268]:
+          - text: 在这个仓库里，最关键的 harness 规则之一就是：
+          - strong [ref=e269]: 不要让同一个上下文既做实现，又做完成判定
+          - text: 。完成必须由 fresh session 或独立审计重新回看 live repo；Plan 143 和 Plan 145 的 closure 之所以有分量，正是因为"完成"不是实现者自报，而是来自独立的收敛判定。
+        - heading "5. Memory harness" [level=3] [ref=e270]:
+          - generic [ref=e271]: 5. Memory harness
+        - paragraph [ref=e272]:
+          - code [ref=e273]: docs/logs/
+          - text: 、
+          - code [ref=e274]: docs/bugs/
+          - text: 、
+          - code [ref=e275]: docs/discussions/
+          - text: 构成跨 session 的外部化记忆。
+        - paragraph [ref=e276]: 这一层特别重要，因为对 AI 来说，"为什么不能那样理解"本身也是系统记忆的一部分。只保留最终结论还不够，很多时候还必须保留：
+        - list [ref=e277]:
+          - listitem [ref=e278]:
+            - generic [ref=e279]: 哪个前提已经被证伪
+          - listitem [ref=e280]:
+            - generic [ref=e281]: 哪条路径已经证明会发散
+          - listitem [ref=e282]:
+            - generic [ref=e283]: 哪种术语翻译会把问题降格
+          - listitem [ref=e284]:
+            - generic [ref=e285]: 哪个"已完成"判断后来被 live repo 推翻
+        - paragraph [ref=e286]: 没有这层 memory harness，系统每次都会丢失一部分历史轨迹信息。
+        - paragraph [ref=e287]:
+          - text: 真正的闭环不是"定义一次 attractor，然后永久执行 harness"，而是"定义 attractor → 扩张 → 纠偏 → 更新 attractor → 再扩张"。
+          - code [ref=e288]: flux-compiler
+          - text: /
+          - code [ref=e289]: flux-action-core
+          - text: /
+          - code [ref=e290]: flux-runtime
+          - text: 三层拆分，就是 attractor 被实践校正后再继续扩张的例子。
+        - heading "九、为什么新 Attractor 通常不是 AI 自己演化得到" [level=2] [ref=e291]:
+          - generic [ref=e292]: 九、为什么新 Attractor 通常不是 AI 自己演化得到
+        - paragraph [ref=e293]: 即使已经有了 harness，也不能指望 AI 在高速迭代中自己慢慢演化得出新的 attractor。
+        - paragraph [ref=e294]: 至少在当前主流模型的训练分布和偏置下，通常不能指望这件事自然发生。
+        - paragraph [ref=e295]: 更具体地说：
+        - list [ref=e296]:
+          - listitem [ref=e297]:
+            - generic [ref=e298]: 当前主流 AI 很擅长围绕既有 attractor 高速展开和收敛
+          - listitem [ref=e299]:
+            - generic [ref=e300]: 但它通常会回到自己见过的平均方案
+          - listitem [ref=e301]:
+            - generic [ref=e302]: 真正新的概念切分、边界重定义和架构语言，仍需要人先给出
+        - paragraph [ref=e303]:
+          - strong [ref=e304]: 不能把定义新 attractor 的责任默认外包给 AI。
+        - paragraph [ref=e305]: 在大型框架开发里，人和 AI 的分工不能简单理解成"AI 写代码，人做 review"。更真实的分工是：
+        - list [ref=e306]:
+          - listitem [ref=e307]:
+            - generic [ref=e308]: 人定义新的 attractor
+          - listitem [ref=e309]:
+            - generic [ref=e310]: AI 围绕既定 attractor 高速展开
+          - listitem [ref=e311]:
+            - generic [ref=e312]: harness 持续将轨迹拉回正轨
+        - paragraph [ref=e313]:
+          - text: 像
+          - code [ref=e314]: ActionScope
+          - text: 和
+          - code [ref=e315]: Data Scope
+          - text: 分离、词法作用域这类真正改变系统结构语言的概念，不是让 AI 自由采样平均方案就能生长出来的。它们是新 attractor 先被提出，然后 AI 才能在新基线上做大规模展开。
+        - paragraph [ref=e316]:
+          - text: 需要承认一个限制：
+          - strong [ref=e317]: 这意味着这套方法论的有效性依赖于团队中存在能定义 attractor 的人
+          - text: 。这不是方法论的弱点，而是它正确识别的事实——架构判断是稀缺资源。传统协作中，这种判断可以部分留在架构师脑中，靠口传心授和 code review 传递；AI 没有跨 session 记忆，任何未被显式外化的架构判断对 AI 都不存在。这套方法论的工程贡献正是把这种稀缺资源
+          - strong [ref=e318]: 外化为可版本化、可审计、可传承的仓库结构
+          - text: ，让它不必随个人走。但如果团队中完全没有人能做出这种判断，方法论也无法凭空生成它。
+        - heading "十、结语" [level=2] [ref=e319]:
+          - generic [ref=e320]: 十、结语
+        - paragraph [ref=e321]: AI 大规模开发真正困难的地方，不在于让 AI 多写一点代码，而在于让系统在高速扩张中仍然向正确结构收敛。
+        - paragraph [ref=e322]:
+          - text: 这个收敛问题在以状态为一等公民的传统方法论里
+          - strong [ref=e323]: 没有正面的对象
+          - text: ——它只能通过"债务""脆弱性""腐蚀"这类否定性词汇被间接追认。要让收敛问题成为可被表达、被讨论、被工程化处理的一等公民对象，方法论必须把轨迹纳入基础范畴。
+        - paragraph [ref=e324]: 谁提出新的 attractor，谁就在定义系统后续演化的结构基线。
+        - paragraph [ref=e325]: 把这套方法压缩到最后，核心只有一句：
+        - paragraph [ref=e326]:
+          - strong [ref=e327]: 状态空间 → 吸引子 → 轨迹 → 控制。
+        - paragraph [ref=e328]: 这不是更复杂的工程流程，是更基础的工程概念结构。先有系统应向哪里长期收敛的结构，才有轨迹是否跑偏的判断；先有轨迹是否跑偏的判断，后面的 harness、guardrail、verification、audit、closure 才有统一意义。
+        - paragraph [ref=e329]: 在 AI 时代，真正稀缺的并非更多会写代码的 agent，而是能够率先回答"系统该向哪里收敛"的人。
+        - separator [ref=e330]
+        - paragraph [ref=e331]:
+          - strong [ref=e332]: nop-chaos-flux 已开源：
+        - list [ref=e333]:
+          - listitem [ref=e334]:
+            - generic [ref=e335]: "GitHub: https://github.com/entropy-cloud/nop-chaos-flux"
+          - listitem [ref=e336]:
+            - generic [ref=e337]: "Gitee: https://gitee.com/canonical-entropy/nop-chaos-flux"
+    - generic [ref=e338]:
+      - paragraph [ref=e343]:
+        - link "喜欢作者" [ref=e344]:
+          - /url: javascript:;
+          - text: 喜欢作者
+      - generic [ref=e348]:
+        - button "可逆计算 · 目录" [ref=e349]:
+          - generic [ref=e352]: 可逆计算 · 目录
+        - button "上一篇 · Nop Chaos Flux：百度AMIS之后的下一代低代码渲染引擎" [ref=e355]:
+          - generic [ref=e356]:
+            - generic [ref=e357]: 上一篇
+            - generic [ref=e358]:
+              - text: ·
+              - generic [ref=e359]: Nop Chaos Flux：百度AMIS之后的下一代低代码渲染引擎
+  - generic [ref=e364]:
+    - link "可逆计算" [ref=e374]:
+      - generic [ref=e375]: 可逆计算
+    - generic [ref=e377]:
+      - button "赞" [ref=e379]:
+        - generic [ref=e380]: 赞
+      - button "分享" [ref=e382]:
+        - generic [ref=e383]: 分享
+      - button "在看" [ref=e385]:
+        - generic [ref=e386]: 推荐
+      - button "留言 写留言" [ref=e388]:
+        - generic [ref=e389]: 写留言
