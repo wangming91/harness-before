@@ -21,6 +21,8 @@
 - `audit`：发起和记录独立审计
 - `close`：在满足条件后关闭计划
 - `memory`：记录和检索外部化记忆
+- `route`：根据问题输出建议阅读顺序
+- `drift`：识别基础漂移并生成漂移报告
 
 这些命令会把结构化数据写入仓库，配套生成文档，便于后续回放、审查和复用。
 
@@ -37,16 +39,40 @@
 
 ## 安装
 
-项目使用 Python 3.13+。
+项目要求 Python 3.13+。先确认版本：
 
 ```bash
-pip install -e .
+python3 --version
 ```
 
-安装后可以直接使用：
+推荐在仓库根目录做 editable install：
+
+```bash
+python3 -m pip install -e .
+```
+
+安装后可以在任意目录使用 console script：
 
 ```bash
 abh --help
+```
+
+如果没有安装包，也可以在仓库根目录直接运行：
+
+```bash
+python3 -m abh --help
+```
+
+如果在临时目录或外部目录用源码运行，需要显式提供仓库路径：
+
+```bash
+PYTHONPATH=/path/to/harness-before python3 -m abh --help
+```
+
+最小验证命令：
+
+```bash
+python3 -m unittest tests/test_cli.py
 ```
 
 ## 使用教程
@@ -106,7 +132,7 @@ abh audit request plan-001 \
 abh audit record audit-001 \
   --result pass \
   --rationale "证据完整，计划满足关闭条件" \
-  --finding "无阻塞问题"
+  --finding "Low|No blocking issue|tests/test_cli.py|No action"
 ```
 
 ### 7. 关闭计划
@@ -129,6 +155,26 @@ abh memory add \
 abh memory search --query "漂移"
 ```
 
+### 9. 路由和漂移分析
+
+根据问题输出建议阅读顺序：
+
+```bash
+abh route --question "Can we close this plan?"
+```
+
+对文本证据做基础漂移分析，并把漂移模式写入 memory：
+
+```bash
+abh drift analyze \
+  --id drift-001 \
+  --source drift-source.txt \
+  --evidence drift-source.txt \
+  --memory-id mem-drift-001
+
+abh memory search --type divergent_pattern --query dependency
+```
+
 ## 项目结构
 
 - `abh/`：CLI 和核心逻辑
@@ -147,4 +193,4 @@ abh memory search --query "漂移"
 
 ## 后续演进
 
-当前仓库已经覆盖计划、验证、审计、关闭和记忆，后续可继续扩展路由、漂移分析和自动化决策能力，让 harness 更完整地支持长期收敛。
+当前仓库已经覆盖计划、验证、审计、关闭、记忆、路由和基础漂移分析。后续可继续扩展更丰富的漂移规则、CI 集成和自动化决策能力，让 harness 更完整地支持长期收敛。

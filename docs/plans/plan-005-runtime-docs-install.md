@@ -3,7 +3,7 @@
 ## Metadata
 
 - ID: plan-005-runtime-docs-install
-- Status: review
+- Status: closed
 - Attractor: `docs/architecture/attractors/abh-core-attractor.md`
 - Baseline: Sprint 4 route and drift loop
 - Owner: platform
@@ -22,7 +22,7 @@
 - 不发布到 PyPI。
 - 不新增依赖管理工具。
 - 不改 CLI 行为。
-- 不关闭本计划，直到独立会话审计完成。
+- 不实现 Sprint 5 范围以外的新能力。
 
 ## Exit Criteria
 
@@ -49,6 +49,7 @@
 - `docs/audits/audit-005-runtime-docs-install.md`
 - Live verification: `python3 -m unittest tests/test_cli.py`
 - Live verification: `python3 -m abh --help`
+- Independent review: `docs/audits/audit-005-runtime-docs-install.md`
 
 ## Audit Requirement
 
@@ -71,4 +72,4 @@
 ## Notes
 
 - 本计划只修文档，不改变 CLI 行为。
-- 本计划处于 review 状态，需要独立会话审计后才能关闭。
+- 本计划已通过独立会话审计并关闭。

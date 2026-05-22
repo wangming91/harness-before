@@ -2,7 +2,7 @@
 
 ## 当前阶段
 
- Sprint 4：路由与漂移分析
+ Sprint 5：运行文档与安装说明
 
 ## 状态说明
 
@@ -62,3 +62,14 @@
 | S4-005 | 漂移转 follow-up | Done | drift report follow-ups |
 | S4-006 | Sprint 4 启动计划 | Done | `docs/plans/plan-004-sprint-4-route-drift.md` |
 | S4-007 | Sprint 4 独立审计 | Done | `docs/audits/audit-004-sprint-4-route-drift.md` |
+
+## Sprint 5
+
+| ID | 任务 | 状态 | 产出 |
+| --- | --- | --- | --- |
+| S5-001 | Runtime 要求说明 | Done | `README.md` |
+| S5-002 | Editable install 说明 | Done | `README.md` |
+| S5-003 | PYTHONPATH 兜底说明 | Done | `README.md` |
+| S5-004 | CLI 示例修正 | Done | `README.md` |
+| S5-005 | Sprint 5 启动计划 | Done | `docs/plans/plan-005-runtime-docs-install.md` |
+| S5-006 | Sprint 5 独立审计 | Done | `docs/audits/audit-005-runtime-docs-install.md` |
