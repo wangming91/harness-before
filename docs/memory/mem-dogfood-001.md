@@ -1,0 +1,31 @@
+# Memory: 历史手写 Markdown 计划与 abh CLI 管理的数据是两套不相干的东西
+
+## Metadata
+
+- ID: mem-dogfood-001
+- Type: false_assumption
+- Status: active
+- Created: 2026-05-22T16:05:42.124963+00:00
+- Updated: 2026-05-22T16:05:42.125250+00:00
+- Related: 
+
+## Summary
+
+历史手写 Markdown 计划与 abh CLI 管理的数据是两套不相干的东西
+
+## Context
+
+Sprint 1-5 的计划全部用手写 Markdown 创建，未使用 abh plan create，导致 docs/plans/ 与 .abh/plans/ 数据完全脱节。迁移需要逐条重建 verify、audit、close 记录。
+
+## Evidence
+
+- docs/plans/
+- .abh/plans/
+
+## Implication
+
+后续所有计划必须通过 abh plan create 创建，保持 CLI 元数据与文档双写一致
+
+## Deprecation Policy
+
+Mark deprecated when evidence no longer applies.
