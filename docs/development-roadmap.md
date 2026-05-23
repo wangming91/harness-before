@@ -5,7 +5,7 @@
 本文档是项目的主排期基线，负责同时承载两条线：
 
 - 历史执行线：记录 Sprint 1-8 已经交付的版本和计划。
-- 长期阶段线：按照 `docs/阶段规划.md` 的六阶段路线，规划后续 12 个月演进。
+- 长期阶段线：按照 `docs/阶段规划.md` 的七阶段路线，规划后续 12 个月演进。
 
 当两条线发生冲突时，已关闭 plan 和 audit 是历史事实来源；长期阶段线是未来排期来源。新的 plan 应优先从长期阶段线中切出最小可关闭范围。
 
@@ -114,7 +114,7 @@
 目标：
 
 - 将本路线图改为“历史执行线 + 长期阶段线”的双层结构。
-- 严格承接 `docs/阶段规划.md` 的阶段 1-6 长期路线。
+- 严格承接 `docs/阶段规划.md` 的阶段 1-7 长期路线。
 - 明确 Sprint 1-8 与长期阶段的映射关系。
 - 列出下一批推荐计划，作为后续 plan 切分入口。
 
@@ -151,9 +151,9 @@
 
 当前准备进入 Sprint 12。
 
-阶段 1 已完成，下一轮建议进入阶段 2，只追求一个结果：把验证从人工记录升级为本地执行器，让 plan 的 validation checklist 能被 `abh` 直接运行和记录。
+阶段 1 已完成，下一轮建议进入新增的阶段 2，只追求一个结果：把当前面向人类阅读的 CLI 输出升级为 Agent 可程序化调用的协议基础，让 Claude、Cursor 等 Agent 能稳定读取 ABH 的计划、审计、记忆、漂移和路线状态。
 
-建议计划：`plan-012-verify-runner`。
+建议计划：`plan-012-agent-protocol-foundation`。
 
 ## 5. 长期阶段线
 
@@ -180,9 +180,31 @@
 
 建议后续计划：
 
-- `plan-012-verify-runner`：把验证从人工记录升级为本地执行器。
+- `plan-012-agent-protocol-foundation`：建立 JSON 输出模式、Agent tool schema 和只读 MCP Server 第一版。
 
-### 阶段 2：从“记录验证”升级到“执行验证”
+### 阶段 2：Agent Protocol 基础
+
+周期：1-2 个月
+
+目标：把 ABH 从“人类可读 CLI”升级为“Agent 可程序化调用的治理接口”。
+
+核心事项：
+
+- 为核心读操作增加机器可解析输出，例如 `--json` 或等价 JSON mode。
+- 定义稳定的 Agent tool schema，覆盖 plan、verify、audit、memory、route、drift 和 doctor 的输入、输出和错误格式。
+- 统一 CLI 返回码和结构化错误，保证 Agent 能区分成功、校验失败、业务阻断和系统错误。
+- 新增只读 MCP Server 第一版，让 Claude、Cursor 等 Agent 能读取计划、审计、记忆、漂移和当前路线。
+- MCP 写操作后置，只在读协议和工具 schema 稳定后开放，并继续遵守现有 ABH 门禁。
+
+建议版本：v0.2。
+
+建议后续计划：
+
+- `plan-012-agent-protocol-foundation`
+- `plan-013-json-output-and-errors`
+- `plan-014-readonly-mcp-server`
+
+### 阶段 3：从“记录验证”升级到“执行验证”
 
 周期：1-3 个月
 
@@ -196,15 +218,15 @@
 - 支持 `abh plan update`，补充 goals、non-goals、exit criteria、validation checklist 和 closure evidence。
 - 在不破坏现有 CLI 的前提下，逐步拆分 `core.py` 为更小的领域模块，例如 `plans.py`、`audits.py`、`memory.py`、`drift.py`、`routing.py`。
 
-建议版本：v0.7。
+建议版本：v0.3。
 
 建议后续计划：
 
-- `plan-011-verify-runner`
-- `plan-012-plan-update`
-- `plan-013-core-module-split`
+- `plan-015-verify-runner`
+- `plan-016-plan-update`
+- `plan-017-core-module-split`
 
-### 阶段 3：补齐 Attractor Registry
+### 阶段 4：补齐 Attractor Registry
 
 周期：3-4 个月
 
@@ -217,14 +239,14 @@
 - 记录吸引子版本差异、升级原因、影响范围和迁移策略。
 - route/drift 优先读取 active attractor，而不是只靠固定路径和关键词。
 
-建议版本：v0.8。
+建议版本：v0.4。
 
 建议后续计划：
 
-- `plan-014-attractor-registry`
-- `plan-015-attractor-aware-route-drift`
+- `plan-018-attractor-registry`
+- `plan-019-attractor-aware-route-drift`
 
-### 阶段 4：真正独立审计
+### 阶段 5：真正独立审计
 
 周期：4-6 个月
 
@@ -238,14 +260,14 @@
 - 关闭计划时检查是否有 fresh/independent 标记的通过审计。
 - 固化审计模板，避免每次靠人工记忆。
 
-建议版本：v0.9。
+建议版本：v0.5。
 
 建议后续计划：
 
-- `plan-016-audit-prompt-bundle`
-- `plan-017-independent-audit-gate`
+- `plan-020-audit-prompt-bundle`
+- `plan-021-independent-audit-gate`
 
-### 阶段 5：漂移与记忆质量提升
+### 阶段 6：漂移与记忆质量提升
 
 周期：6-9 个月
 
@@ -258,15 +280,15 @@
 - route 从关键词匹配升级为“对象图 + 简单权重排序”。
 - 新增 `abh report`，展示计划关闭率、审计驳回率、重复漂移率和 memory 命中情况。
 
-建议版本：v0.10。
+建议版本：v0.6。
 
 建议后续计划：
 
-- `plan-018-drift-quality`
-- `plan-019-memory-index`
-- `plan-020-reporting`
+- `plan-022-drift-quality`
+- `plan-023-memory-index`
+- `plan-024-reporting`
 
-### 阶段 6：团队可用与生态集成
+### 阶段 7：团队可用与生态集成
 
 周期：9-12 个月
 
@@ -278,46 +300,72 @@
 - 提供 GitHub Actions 模板：PR 中自动跑 `abh doctor`、测试和漂移检查。
 - 提供 Git hooks 可选集成：关闭 plan 前检查审计和证据链。
 - 支持多仓库共享 attractor/memory 的导入导出。
-- 增加 Agent/MCP 友好的 JSON 输出模式，例如 `--json`。
 - 发布到 PyPI，同时保留 `uvx --from git+...` 路径。
 
 建议版本：v1.0。
 
 建议后续计划：
 
-- `plan-021-init-and-ci-templates`
-- `plan-022-json-output`
-- `plan-023-multi-repo-sharing`
-- `plan-024-pypi-release`
+- `plan-025-init-and-ci-templates`
+- `plan-026-multi-repo-sharing`
+- `plan-027-pypi-release`
 
 ## 6. 历史执行线与长期阶段映射
 
 | 长期阶段 | 已完成历史计划 | 已完成内容 | 剩余内容 |
 | --- | --- | --- | --- |
 | 阶段 1：恢复权威基线，稳住内核 | `plan-006-stabilize`, `plan-007-zero-dep-install`, `plan-008-roadmap-sync-and-doctor`, `plan-009-roadmap-phase-alignment`, `plan-010-core-governance-hardening`, `plan-011-stage-1-finalization` | 历史计划迁移、安装门槛降低、`abh doctor`、路线图对齐、demo 清理、schema version、历史 schema 迁移、CI、版本策略 | 已完成；内容级 doctor、发布自动化转入后续质量/发布计划 |
-| 阶段 2：验证执行器 | `plan-002-sprint-2-local-plan-loop` | `verify record` 可记录验证结果 | `verify run`、失败自动证据、plan update、模块拆分 |
-| 阶段 3：Attractor Registry | `plan-001-sprint-1-foundation` | active attractor 文档和模板 | attractor CLI、版本迁移、active 校验 |
-| 阶段 4：真正独立审计 | `plan-003-sprint-3-audit-memory-close`, `plan-007-zero-dep-install`, `plan-008-roadmap-sync-and-doctor` | audit request/record/close 闭环，人工独立审计流程已 dogfood | audit prompt/bundle、独立上下文字段、关闭门禁 |
-| 阶段 5：漂移与记忆质量提升 | `plan-004-sprint-4-route-drift`, `plan-007-sprint-7-dogfood` | 关键词 drift、route 注入活跃计划和记忆 | severity/confidence、memory 索引、对象图路由、report |
-| 阶段 6：团队可用与生态集成 | `plan-007-zero-dep-install` | uvx/uv tool install 降低接入门槛 | init、CI 模板、Git hooks、JSON 输出、多仓库、PyPI |
+| 阶段 2：Agent Protocol 基础 | 无 | CLI 已可参数化调用，但输出仍以自然文本为主 | JSON 输出模式、结构化错误、Agent tool schema、只读 MCP Server |
+| 阶段 3：验证执行器 | `plan-002-sprint-2-local-plan-loop` | `verify record` 可记录验证结果 | `verify run`、失败自动证据、plan update、模块拆分 |
+| 阶段 4：Attractor Registry | `plan-001-sprint-1-foundation` | active attractor 文档和模板 | attractor CLI、版本迁移、active 校验 |
+| 阶段 5：真正独立审计 | `plan-003-sprint-3-audit-memory-close`, `plan-007-zero-dep-install`, `plan-008-roadmap-sync-and-doctor` | audit request/record/close 闭环，人工独立审计流程已 dogfood | audit prompt/bundle、独立上下文字段、关闭门禁 |
+| 阶段 6：漂移与记忆质量提升 | `plan-004-sprint-4-route-drift`, `plan-007-sprint-7-dogfood` | 关键词 drift、route 注入活跃计划和记忆 | severity/confidence、memory 索引、对象图路由、report |
+| 阶段 7：团队可用与生态集成 | `plan-007-zero-dep-install` | uvx/uv tool install 降低接入门槛 | init、CI 模板、Git hooks、多仓库、PyPI |
 
 ## 7. 下一批推荐计划
 
-### plan-010-core-governance-hardening
+### plan-012-agent-protocol-foundation
 
 范围：
 
-- 关闭或废弃 `plan-200-demo`。
-- 为核心 JSON 对象加入 schema/version。
-- 建立 CI 配置，运行 unittest、`abh doctor` 和基础 smoke test。
-- 明确包版本和 README 功能版本之间的关系。
+- 定义 Agent Protocol 的最小对象和错误协议。
+- 为核心只读命令规划 JSON 输出形态。
+- 明确 MCP Server 第一版只读范围。
+- 规定 Agent 写操作的门禁原则。
 
 不做：
 
 - 不实现 `verify run`。
-- 不重构核心模块。
+- 不开放 MCP 写操作。
+- 不引入 Web UI。
 
-### plan-011-verify-runner
+### plan-013-json-output-and-errors
+
+范围：
+
+- 为核心读命令增加 `--json` 或等价 JSON mode。
+- 统一成功、校验失败、业务阻断和系统错误的结构化输出。
+- 补充 Agent 可用的 CLI contract 测试。
+
+不做：
+
+- 不实现 MCP Server。
+- 不改变现有自然文本输出默认体验。
+
+### plan-014-readonly-mcp-server
+
+范围：
+
+- 封装只读 MCP Server。
+- 暴露 plan、audit、memory、drift、route、doctor 的安全读取工具。
+- 基于 JSON 输出和内部对象模型返回稳定结构。
+
+不做：
+
+- 不提供写操作。
+- 不绕过 ABH 现有状态机和审计门禁。
+
+### plan-015-verify-runner
 
 范围：
 
@@ -331,7 +379,7 @@
 - 不实现 CI 服务端。
 - 不改变 audit 关闭规则。
 
-### plan-012-plan-update
+### plan-016-plan-update
 
 范围：
 
@@ -347,5 +395,6 @@
 - 如果 roadmap、task-board、README 与 `.abh/` 状态不同步，仓库事实来源会再次分裂。
 - 如果模板过重，会降低使用率。模板必须短而硬。
 - 如果没有 active attractor 校验，后续 plan 仍可能绕过吸引子。
+- 如果没有 Agent Protocol，ABH 只能被人类阅读，无法成为 Claude、Cursor 等 Agent 的程序化治理接口。
 - 如果 memory 只记录成功结论，会丢失真正有价值的失败轨迹。
 - 如果过早做 Web UI，会削弱 CLI 和 Agent 协议这条最关键路径。
