@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 import uuid
+from collections.abc import Callable
 from pathlib import Path
 
 from .models import (
@@ -23,8 +24,13 @@ from .storage import (
     audit_doc_path,
     audit_json_path,
     audits_dir,
+    drift_dir,
     drift_doc_path,
     drift_json_path,
+    docs_audits_dir,
+    docs_drift_dir,
+    docs_memory_dir,
+    docs_plans_dir,
     ensure_workspace,
     memory_doc_path,
     memory_json_path,
@@ -52,9 +58,37 @@ class AbhError(RuntimeError):
     pass
 
 
+DOCTOR_OBJECTS: tuple[tuple[str, str, Callable[[Path | None], Path], Callable[[Path | None], Path]], ...] = (
+    ("plan", "plan-", plans_dir, docs_plans_dir),
+    ("audit", "audit-", audits_dir, docs_audits_dir),
+    ("memory", "mem-", memory_dir, docs_memory_dir),
+    ("drift", "drift-", drift_dir, docs_drift_dir),
+)
+
+
 def validate_identifier(value: str, label: str = "identifier") -> None:
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", value):
         raise AbhError(f"invalid {label}: {value!r}")
+
+
+def doctor(cwd: Path | None = None) -> list[str]:
+    issues: list[str] = []
+    for label, prefix, json_dir_factory, docs_dir_factory in DOCTOR_OBJECTS:
+        json_dir = json_dir_factory(cwd)
+        docs_dir = docs_dir_factory(cwd)
+        json_ids = {path.stem for path in json_dir.glob("*.json")} if json_dir.exists() else set()
+        doc_ids = set()
+        if docs_dir.exists():
+            doc_ids = {
+                path.stem
+                for path in docs_dir.glob("*.md")
+                if path.name != "README.md" and path.stem.startswith(prefix)
+            }
+        for object_id in sorted(json_ids - doc_ids):
+            issues.append(f"missing markdown for {label} {object_id}")
+        for object_id in sorted(doc_ids - json_ids):
+            issues.append(f"orphan markdown for {label} {object_id}")
+    return issues
 
 
 def list_plans(cwd: Path | None = None) -> list[PlanRecord]:

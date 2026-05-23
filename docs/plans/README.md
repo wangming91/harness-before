@@ -19,3 +19,4 @@ Plan 不是待办列表，而是局部轨迹收敛机制。每个 plan 必须说
 - 没有 exit criteria 的 plan 不能进入 ready。
 - 没有独立 audit 的 plan 不能 closed。
 - closed plan 必须有 closure evidence。
+- 关闭前应运行 `abh doctor`，确认 `.abh/` JSON 与 `docs/` Markdown 没有分裂。

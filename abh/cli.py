@@ -9,6 +9,7 @@ from .core import (
     analyze_drift,
     close_plan,
     create_plan,
+    doctor,
     list_audits,
     list_memories,
     list_plans,
@@ -92,6 +93,9 @@ def build_parser() -> argparse.ArgumentParser:
     close = subparsers.add_parser("close", help="close a plan after passing audit")
     close.add_argument("plan_id")
     close.set_defaults(handler=handle_close)
+
+    doctor_parser = subparsers.add_parser("doctor", help="check workspace consistency")
+    doctor_parser.set_defaults(handler=handle_doctor)
 
     memory_parser = subparsers.add_parser("memory", help="manage externalized memory")
     memory_sub = memory_parser.add_subparsers(dest="memory_command", required=True)
@@ -226,6 +230,17 @@ def handle_close(args: argparse.Namespace) -> int:
     plan = close_plan(args.plan_id)
     print(f"closed plan {plan.id}")
     return 0
+
+
+def handle_doctor(args: argparse.Namespace) -> int:
+    issues = doctor()
+    if not issues:
+        print("doctor: ok")
+        return 0
+    print("doctor: found consistency issues")
+    for issue in issues:
+        print(f"- {issue}")
+    return 1
 
 
 def handle_memory_add(args: argparse.Namespace) -> int:

@@ -2,7 +2,7 @@
 
 ## 当前阶段
 
- Sprint 5：运行文档与安装说明
+Sprint 8：路线同步与工作区一致性检查
 
 ## 状态说明
 
@@ -73,3 +73,38 @@
 | S5-004 | CLI 示例修正 | Done | `README.md` |
 | S5-005 | Sprint 5 启动计划 | Done | `docs/plans/plan-005-runtime-docs-install.md` |
 | S5-006 | Sprint 5 独立审计 | Done | `docs/audits/audit-005-runtime-docs-install.md` |
+
+## Sprint 6
+
+| ID | 任务 | 状态 | 产出 |
+| --- | --- | --- | --- |
+| S6-001 | 历史计划迁移到 abh CLI 管理 | Done | `.abh/plans/`, `docs/plans/` |
+| S6-002 | 运行时目录初始化补齐 | Done | `abh/storage.py` |
+| S6-003 | README 已知问题修正 | Done | `README.md` |
+| S6-004 | Dogfooding memory 记录 | Done | `docs/memory/mem-dogfood-001.md` |
+| S6-005 | Sprint 6 启动计划 | Done | `docs/plans/plan-006-stabilize.md` |
+| S6-006 | Sprint 6 独立审计 | Done | `docs/audits/audit-006-stabilize.md` |
+
+## Sprint 7
+
+| ID | 任务 | 状态 | 产出 |
+| --- | --- | --- | --- |
+| S7-001 | Plan 列表命令 | Done | `abh plan list` |
+| S7-002 | Memory 列表命令 | Done | `abh memory list` |
+| S7-003 | Audit 列表命令 | Done | `abh audit list` |
+| S7-004 | Route 注入活跃计划与相关记忆 | Done | `abh route` |
+| S7-005 | Drift 支持按计划 non-goals 检测 | Done | `abh drift analyze --plan` |
+| S7-006 | uv/uvx 零门槛安装说明 | Done | `README.md`, `pyproject.toml` |
+| S7-007 | 独立审计流程 memory | Done | `docs/memory/mem-independent-audit.md`, `docs/memory/mem-audit-template.md` |
+| S7-008 | Sprint 7 计划与审计 | Done | `docs/plans/plan-007-sprint-7-dogfood.md`, `docs/audits/audit-007-sprint-7-dogfood.md` |
+| S7-009 | 零门槛安装计划与审计 | Done | `docs/plans/plan-007-zero-dep-install.md`, `docs/audits/audit-007b-zero-dep-install.md` |
+
+## Sprint 8
+
+| ID | 任务 | 状态 | 产出 |
+| --- | --- | --- | --- |
+| S8-001 | 创建 Sprint 8 计划 | Done | `docs/plans/plan-008-roadmap-sync-and-doctor.md` |
+| S8-002 | 新增 doctor 一致性检查 | Done | `abh doctor` |
+| S8-003 | 为 doctor 补测试 | Done | `tests/test_cli.py` |
+| S8-004 | 同步 README、roadmap、task-board | Done | `README.md`, `docs/development-roadmap.md`, `docs/task-board.md` |
+| S8-005 | 记录验证与独立审计 | Done | `docs/audits/audit-008-roadmap-sync-and-doctor.md` |

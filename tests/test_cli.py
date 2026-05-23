@@ -417,6 +417,46 @@ class CliTests(TestCase):
         self.assertIn("audit-list-b  -> plan-audit-list", out)
         self.assertIn("total: 2 audit(s)", out)
 
+    def test_doctor_passes_when_json_and_docs_are_in_sync(self) -> None:
+        self.run_cli(
+            "plan", "create",
+            "--id", "plan-doctor-ok",
+            "--title", "Doctor OK",
+            "--attractor", "docs/architecture/attractors/abh-core-attractor.md",
+            "--baseline", "baseline",
+        )
+
+        code, out, err = self.run_cli("doctor")
+
+        self.assertEqual(code, 0, err)
+        self.assertIn("doctor: ok", out)
+
+    def test_doctor_reports_missing_markdown_for_json_record(self) -> None:
+        self.run_cli(
+            "plan", "create",
+            "--id", "plan-doctor-missing-doc",
+            "--title", "Doctor Missing Doc",
+            "--attractor", "docs/architecture/attractors/abh-core-attractor.md",
+            "--baseline", "baseline",
+        )
+        (self.root / "docs" / "plans" / "plan-doctor-missing-doc.md").unlink()
+
+        code, out, err = self.run_cli("doctor")
+
+        self.assertEqual(code, 1)
+        self.assertEqual(err, "")
+        self.assertIn("missing markdown for plan plan-doctor-missing-doc", out)
+
+    def test_doctor_reports_orphan_markdown_without_json(self) -> None:
+        (self.root / "docs" / "plans").mkdir(parents=True, exist_ok=True)
+        (self.root / "docs" / "plans" / "plan-doctor-orphan.md").write_text("# Plan: Orphan\n", encoding="utf-8")
+
+        code, out, err = self.run_cli("doctor")
+
+        self.assertEqual(code, 1)
+        self.assertEqual(err, "")
+        self.assertIn("orphan markdown for plan plan-doctor-orphan", out)
+
     def test_route_injects_active_plans(self) -> None:
         self.run_cli(
             "plan", "create",

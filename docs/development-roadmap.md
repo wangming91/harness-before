@@ -58,6 +58,29 @@
 - 实现基础漂移分类。
 - 把漂移发现反向写入计划和 memory。
 
+### v0.5：运行说明与自举稳定
+
+周期：Sprint 5-7
+
+目标：
+
+- 明确 Python、pip、uvx 和 uv tool install 的运行路径。
+- 将历史手写计划迁移到 abh CLI 双写数据。
+- 新增 plan / memory / audit list 查询能力。
+- 增强 route 和 drift，使其能利用当前计划状态和计划 non-goals。
+- 通过 dogfooding 记录文档同步、独立审计和安装门槛相关 memory。
+
+### v0.6：路线同步与一致性检查
+
+周期：Sprint 8
+
+目标：
+
+- 将 roadmap 和 task-board 同步到当前实际进度。
+- 新增 `abh doctor`，检查 `.abh/` JSON 与 `docs/` Markdown 是否一致。
+- 将文档/运行态一致性纳入 plan 关闭前验证。
+- 为 doctor 命令补充测试覆盖。
+
 ## 4. Sprint 1 计划
 
 ### Sprint 1 目标
@@ -159,13 +182,46 @@
 
 ## 8. 当前执行焦点
 
-当前进入 Sprint 4。
+当前进入 Sprint 8。
 
-本轮只追求一个结果：把路由建议和基础漂移分析闭环做出来。
+本轮只追求一个结果：恢复路线图权威性，并把 `.abh/` 与 `docs/` 的一致性检查变成可执行命令。
 
-## 9. 风险控制
+## 9. 后续长期路线
+
+### Phase A：内核治理
+
+- 扩展 `abh doctor`，逐步检查 schema version、doc_path、closure evidence 和 audit evidence。
+- 建立 CI，让 `python3 -m unittest tests/test_cli.py -v` 与 `python3 -m abh doctor` 成为默认门禁。
+- 清理 demo 或过期 draft 计划，降低状态噪音。
+
+### Phase B：验证执行器
+
+- 将 `verify record` 扩展为 `verify run`。
+- 保存退出码、运行耗时、stdout/stderr 摘要和 artifact。
+- 失败时自动生成 blocked 证据。
+
+### Phase C：Attractor Registry
+
+- 新增 `abh attractor list/show/create/supersede`。
+- 让 plan ready gate 校验 active attractor。
+- 支持吸引子版本升级、差异说明和迁移策略。
+
+### Phase D：独立审计协议
+
+- 新增 audit prompt/bundle 能力。
+- 标记审计来源和独立上下文。
+- 关闭 plan 时优先要求独立审计证据。
+
+### Phase E：团队与集成
+
+- 支持 `abh init` 初始化任意仓库。
+- 增加 JSON 输出模式以便 agent/MCP/CI 消费。
+- 提供 GitHub Actions 和 Git hook 示例。
+
+## 10. 风险控制
 
 - 如果模板过重，会降低使用率。模板必须短而硬。
 - 如果没有初始 attractor，后续 plan 无法收口。
 - 如果 Sprint 1 范围扩张到 CLI，会影响基础结构稳定。
 - 如果 memory 只记录成功结论，会丢失真正有价值的失败轨迹。
+- 如果 roadmap、task-board、README 与 `.abh/` 状态不同步，仓库事实来源会再次分裂。

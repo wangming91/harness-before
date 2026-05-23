@@ -23,6 +23,7 @@
 - `memory`：记录、检索和列出外部化记忆
 - `route`：根据问题输出建议阅读顺序（含活跃计划和相关记忆）
 - `drift`：识别基础漂移并生成漂移报告（支持以计划为基准）
+- `doctor`：检查 `.abh/` JSON 与 `docs/` Markdown 是否保持一致
 
 所有命令把结构化数据写入 `.abh/` 目录（JSON），同时同步生成 `docs/` 下的 Markdown 文档，便于回放、审查和复用。
 
@@ -264,6 +265,16 @@ abh memory search --type divergent_pattern --query dependency
 abh drift analyze --id drift-002 --source drift-source.txt --plan plan-007
 ```
 
+### 12. 检查工作区一致性
+
+`doctor` 用于检查核心对象的 JSON 记录和 Markdown 文档是否一一对应：
+
+```bash
+abh doctor
+```
+
+输出 `doctor: ok` 表示 `.abh/plans`、`.abh/audits`、`.abh/memory`、`.abh/drift` 与对应 `docs/` 目录一致。若发现缺失文档或孤儿文档，命令会列出问题并返回非零状态码，适合放入 CI 或 plan 关闭前检查。
+
 ## 项目结构
 
 - `abh/`：CLI 和核心逻辑
@@ -286,6 +297,7 @@ abh drift analyze --id drift-002 --source drift-source.txt --plan plan-007
 
 当前仓库已经覆盖计划、验证、审计、关闭、记忆、路由和基础漂移分析。后续计划：
 
+- 将 `abh doctor` 纳入 CI 和 plan 关闭门禁，防止 JSON/Markdown 再次分裂
 - 提升漂移分析精度：从关键词匹配升级到语义匹配
 - 增加 `abh status` 全局概览命令，聚合所有计划、审计和记忆状态
 - 支持 Git hook 集成，在提交前自动验证状态一致性
