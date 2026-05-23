@@ -1,18 +1,23 @@
 # Attractor Before Harness 开发排期
 
-## 1. 排期目标
+## 1. 文档定位
 
-根据现有 PRD、详细设计和任务拆解，将项目推进为可执行开发计划。本文档作为当前阶段的主排期基线。
+本文档是项目的主排期基线，负责同时承载两条线：
+
+- 历史执行线：记录 Sprint 1-8 已经交付的版本和计划。
+- 长期阶段线：按照 `docs/阶段规划.md` 的六阶段路线，规划后续 12 个月演进。
+
+当两条线发生冲突时，已关闭 plan 和 audit 是历史事实来源；长期阶段线是未来排期来源。新的 plan 应优先从长期阶段线中切出最小可关闭范围。
 
 ## 2. 排期假设
 
 - 采用两周一个 Sprint。
-- 先以 Git-native 文档框架和 CLI 最小闭环为目标。
-- 初期不建设 Web UI。
-- 初期不依赖外部数据库。
-- 所有关键对象先落在仓库文件中。
+- 初期继续保持 Git-native、本地优先、零外部数据库。
+- 不急于建设 Web UI，先让 CLI 和 Agent 协议稳定。
+- 所有关键对象先落在仓库文件中，并通过 `abh doctor` 防止 `.abh/` 与 `docs/` 分裂。
+- 每个阶段都必须能被 plan、verification、audit 和 memory 闭环承接。
 
-## 3. 版本目标
+## 3. 历史执行线
 
 ### v0.1：文档与模型基线
 
@@ -26,6 +31,8 @@
 - 建立第一份启动计划。
 - 固定验收规则和状态流转。
 
+状态：已完成，对应 `plan-001-sprint-1-foundation`。
+
 ### v0.2：本地计划闭环
 
 周期：Sprint 2
@@ -36,6 +43,8 @@
 - 实现本地验证结果记录。
 - 支持计划绑定吸引子。
 - 支持 closure evidence 收集。
+
+状态：已完成，对应 `plan-002-sprint-2-local-plan-loop`。
 
 ### v0.3：独立审计与记忆
 
@@ -48,6 +57,8 @@
 - 强制关闭前审计。
 - 支持假完成和证据不足记录。
 
+状态：已完成，对应 `plan-003-sprint-3-audit-memory-close`。
+
 ### v0.4：路由与漂移分析
 
 周期：Sprint 4
@@ -57,6 +68,8 @@
 - 实现问题路由建议。
 - 实现基础漂移分类。
 - 把漂移发现反向写入计划和 memory。
+
+状态：已完成，对应 `plan-004-sprint-4-route-drift`。
 
 ### v0.5：运行说明与自举稳定
 
@@ -70,6 +83,8 @@
 - 增强 route 和 drift，使其能利用当前计划状态和计划 non-goals。
 - 通过 dogfooding 记录文档同步、独立审计和安装门槛相关 memory。
 
+状态：已完成，对应 `plan-005-runtime-docs-install`、`plan-006-stabilize`、`plan-007-sprint-7-dogfood`、`plan-007-zero-dep-install`。
+
 ### v0.6：路线同步与一致性检查
 
 周期：Sprint 8
@@ -81,147 +96,219 @@
 - 将文档/运行态一致性纳入 plan 关闭前验证。
 - 为 doctor 命令补充测试覆盖。
 
-## 4. Sprint 1 计划
+状态：已完成，对应 `plan-008-roadmap-sync-and-doctor`。
 
-### Sprint 1 目标
+### v0.7：长期阶段路线对齐
 
-完成项目的工程化承载结构，让后续所有开发任务都能被 plan、audit 和 memory 承接。
+周期：Sprint 9
 
-### Sprint 1 范围
+目标：
 
-- `docs/architecture/` 目录
-- `docs/plans/` 目录
-- `docs/audits/` 目录
-- `docs/memory/` 目录
-- Attractor 模板
-- Plan 模板
-- Audit 模板
-- Memory 模板
-- 当前项目初始吸引子
-- Sprint 1 启动计划
+- 将本路线图改为“历史执行线 + 长期阶段线”的双层结构。
+- 严格承接 `docs/阶段规划.md` 的阶段 1-6 长期路线。
+- 明确 Sprint 1-8 与长期阶段的映射关系。
+- 列出下一批推荐计划，作为后续 plan 切分入口。
 
-### Sprint 1 不做
+状态：已完成，对应 `plan-009-roadmap-phase-alignment`。
 
-- 不实现 CLI。
-- 不实现自动化验证执行器。
-- 不接 CI。
-- 不做 Web UI。
+## 4. 当前执行焦点
 
-### Sprint 1 验收标准
+当前准备进入 Sprint 10。
 
-- 所有标准目录存在。
-- 所有模板可直接复制使用。
-- 至少存在一个 active attractor。
-- 至少存在一个 active plan。
-- plan 明确 goals、non-goals、exit criteria 和 closure evidence。
-- audit 模板可以用于独立审计。
-- memory 模板可以记录被证伪前提和发散路径。
+下一轮建议只追求一个结果：完成阶段 1 剩余的内核治理事项，让项目从“路线对齐完成”进入“治理门禁稳定”。
 
-## 5. Sprint 2 计划
+建议计划：`plan-010-core-governance-hardening`。
 
-### Sprint 2 目标
+## 5. 长期阶段线
 
-实现本地最小计划闭环。
+### 阶段 1：恢复权威基线，稳住内核
 
-### Sprint 2 范围
+周期：1 个月
 
-- CLI 项目骨架。
-- `abh plan create`
-- `abh plan status`
-- `abh plan transition`
-- `abh verify record`
-- 计划状态机校验。
+目标：让项目自身不再漂移。
 
-### Sprint 2 验收标准
+核心事项：
 
-- 计划创建必须绑定吸引子。
-- 无 exit criteria 的计划不能进入 ready。
-- 验证结果可以写入计划 evidence。
-- blocked / closing / closed 状态转移可被记录。
+- 更新 `docs/development-roadmap.md` 和 `docs/task-board.md`，把 Sprint 6/7、零门槛安装和 Sprint 8 纳入正式路线。
+- 建立 `abh doctor`，检查 `.abh/*.json` 与 `docs/*.md` 是否一致。
+- 清理或关闭遗留 draft 计划，尤其是 `plan-200-demo`，降低状态噪音。
+- 给数据对象加 schema/version 字段，为后续迁移做准备。
+- 建立 CI：运行 `python3 -m unittest tests/test_cli.py -v`，并验证 `python3 -m abh --help`、`python3 -m abh plan list`、`python3 -m abh doctor`。
+- 把版本号从当前 `0.1.0` 进入可解释的发布节奏，避免 README 功能与包版本脱节。
 
-## 6. Sprint 3 计划
+当前状态：
 
-### Sprint 3 目标
+- 已完成：Sprint 6/7/8 纳入路线、`abh doctor` 第一版、路线图和看板同步。
+- 未完成：清理 `plan-200-demo`、schema/version、CI、版本号发布节奏。
 
-实现独立审计和外部化记忆。
+建议后续计划：
 
-### Sprint 3 范围
+- `plan-010-core-governance-hardening`：清理 demo 计划、加入 schema/version、建立 CI 和版本策略。
 
-- `abh audit request`
-- `abh audit record`
-- `abh close`
-- `abh memory add`
-- `abh memory search`
+### 阶段 2：从“记录验证”升级到“执行验证”
 
-### Sprint 3 验收标准
+周期：1-3 个月
 
-- 无审计报告不能关闭计划。
-- 审计报告必须引用 evidence。
-- memory 条目可按类型和关键词检索。
-- 被推翻的完成判断能被记录。
+目标：让 `verify` 从人工记录结果升级为本地验证执行器。
 
-## 7. Sprint 4 计划
+核心事项：
 
-### Sprint 4 目标
+- 新增 `abh verify run <plan>`，按 plan 的 validation checklist 执行命令。
+- 保存 stdout/stderr 摘要、退出码、耗时和 artifact。
+- 失败时自动把 plan 转入 `blocked`，并生成可审计证据。
+- 支持 `abh plan update`，补充 goals、non-goals、exit criteria、validation checklist 和 closure evidence。
+- 在不破坏现有 CLI 的前提下，逐步拆分 `core.py` 为更小的领域模块，例如 `plans.py`、`audits.py`、`memory.py`、`drift.py`、`routing.py`。
 
-实现路由和基础漂移分析。
+建议版本：v0.7。
 
-### Sprint 4 范围
+建议后续计划：
 
-- `abh route`
-- `abh drift analyze`
-- 漂移分类规则
-- 漂移报告模板
+- `plan-011-verify-runner`
+- `plan-012-plan-update`
+- `plan-013-core-module-split`
 
-### Sprint 4 验收标准
+### 阶段 3：补齐 Attractor Registry
 
-- 能输出建议阅读顺序。
-- 能识别边界漂移、依赖漂移、测试漂移、术语漂移。
-- 漂移结果可引用 evidence。
-- 漂移发现可转成 plan follow-up 或 memory。
+周期：3-4 个月
 
-## 8. 当前执行焦点
+目标：把吸引子从文档约定升级为 CLI 可管理的一等对象。
 
-当前进入 Sprint 8。
-
-本轮只追求一个结果：恢复路线图权威性，并把 `.abh/` 与 `docs/` 的一致性检查变成可执行命令。
-
-## 9. 后续长期路线
-
-### Phase A：内核治理
-
-- 扩展 `abh doctor`，逐步检查 schema version、doc_path、closure evidence 和 audit evidence。
-- 建立 CI，让 `python3 -m unittest tests/test_cli.py -v` 与 `python3 -m abh doctor` 成为默认门禁。
-- 清理 demo 或过期 draft 计划，降低状态噪音。
-
-### Phase B：验证执行器
-
-- 将 `verify record` 扩展为 `verify run`。
-- 保存退出码、运行耗时、stdout/stderr 摘要和 artifact。
-- 失败时自动生成 blocked 证据。
-
-### Phase C：Attractor Registry
+核心事项：
 
 - 新增 `abh attractor list/show/create/supersede`。
-- 让 plan ready gate 校验 active attractor。
-- 支持吸引子版本升级、差异说明和迁移策略。
+- plan 进入 `ready` 前校验引用的是 active attractor。
+- 记录吸引子版本差异、升级原因、影响范围和迁移策略。
+- route/drift 优先读取 active attractor，而不是只靠固定路径和关键词。
 
-### Phase D：独立审计协议
+建议版本：v0.8。
 
-- 新增 audit prompt/bundle 能力。
-- 标记审计来源和独立上下文。
-- 关闭 plan 时优先要求独立审计证据。
+建议后续计划：
 
-### Phase E：团队与集成
+- `plan-014-attractor-registry`
+- `plan-015-attractor-aware-route-drift`
 
-- 支持 `abh init` 初始化任意仓库。
-- 增加 JSON 输出模式以便 agent/MCP/CI 消费。
-- 提供 GitHub Actions 和 Git hook 示例。
+### 阶段 4：真正独立审计
 
-## 10. 风险控制
+周期：4-6 个月
 
-- 如果模板过重，会降低使用率。模板必须短而硬。
-- 如果没有初始 attractor，后续 plan 无法收口。
-- 如果 Sprint 1 范围扩张到 CLI，会影响基础结构稳定。
-- 如果 memory 只记录成功结论，会丢失真正有价值的失败轨迹。
+目标：让“独立审计”从流程原则升级为工具支持。
+
+核心事项：
+
+- 新增 `abh audit prompt <plan>`，生成独立审计提示词。
+- 新增 `abh audit bundle <plan>`，打包审计所需证据清单。
+- `abh audit record` 增加 auditor context/source 字段。
+- 关闭计划时检查是否有 fresh/independent 标记的通过审计。
+- 固化审计模板，避免每次靠人工记忆。
+
+建议版本：v0.9。
+
+建议后续计划：
+
+- `plan-016-audit-prompt-bundle`
+- `plan-017-independent-audit-gate`
+
+### 阶段 5：漂移与记忆质量提升
+
+周期：6-9 个月
+
+目标：降低 drift 误报/漏报，让 memory 从列表检索升级为可复用轨迹知识。
+
+核心事项：
+
+- drift finding 增加 severity、matched span、source excerpt 和 confidence。
+- memory 支持标签、状态废弃、related plan/audit 反向索引。
+- route 从关键词匹配升级为“对象图 + 简单权重排序”。
+- 新增 `abh report`，展示计划关闭率、审计驳回率、重复漂移率和 memory 命中情况。
+
+建议版本：v0.10。
+
+建议后续计划：
+
+- `plan-018-drift-quality`
+- `plan-019-memory-index`
+- `plan-020-reporting`
+
+### 阶段 6：团队可用与生态集成
+
+周期：9-12 个月
+
+目标：让 ABH 成为任何仓库都能接入的本地优先治理层。
+
+核心事项：
+
+- 新增 `abh init`，一键初始化任意仓库。
+- 提供 GitHub Actions 模板：PR 中自动跑 `abh doctor`、测试和漂移检查。
+- 提供 Git hooks 可选集成：关闭 plan 前检查审计和证据链。
+- 支持多仓库共享 attractor/memory 的导入导出。
+- 增加 Agent/MCP 友好的 JSON 输出模式，例如 `--json`。
+- 发布到 PyPI，同时保留 `uvx --from git+...` 路径。
+
+建议版本：v1.0。
+
+建议后续计划：
+
+- `plan-021-init-and-ci-templates`
+- `plan-022-json-output`
+- `plan-023-multi-repo-sharing`
+- `plan-024-pypi-release`
+
+## 6. 历史执行线与长期阶段映射
+
+| 长期阶段 | 已完成历史计划 | 已完成内容 | 剩余内容 |
+| --- | --- | --- | --- |
+| 阶段 1：恢复权威基线，稳住内核 | `plan-006-stabilize`, `plan-007-zero-dep-install`, `plan-008-roadmap-sync-and-doctor`, `plan-009-roadmap-phase-alignment` | 历史计划迁移、安装门槛降低、`abh doctor`、路线图对齐 | 清理 demo draft、schema/version、CI、版本号策略 |
+| 阶段 2：验证执行器 | `plan-002-sprint-2-local-plan-loop` | `verify record` 可记录验证结果 | `verify run`、失败自动证据、plan update、模块拆分 |
+| 阶段 3：Attractor Registry | `plan-001-sprint-1-foundation` | active attractor 文档和模板 | attractor CLI、版本迁移、active 校验 |
+| 阶段 4：真正独立审计 | `plan-003-sprint-3-audit-memory-close`, `plan-007-zero-dep-install`, `plan-008-roadmap-sync-and-doctor` | audit request/record/close 闭环，人工独立审计流程已 dogfood | audit prompt/bundle、独立上下文字段、关闭门禁 |
+| 阶段 5：漂移与记忆质量提升 | `plan-004-sprint-4-route-drift`, `plan-007-sprint-7-dogfood` | 关键词 drift、route 注入活跃计划和记忆 | severity/confidence、memory 索引、对象图路由、report |
+| 阶段 6：团队可用与生态集成 | `plan-007-zero-dep-install` | uvx/uv tool install 降低接入门槛 | init、CI 模板、Git hooks、JSON 输出、多仓库、PyPI |
+
+## 7. 下一批推荐计划
+
+### plan-010-core-governance-hardening
+
+范围：
+
+- 关闭或废弃 `plan-200-demo`。
+- 为核心 JSON 对象加入 schema/version。
+- 建立 CI 配置，运行 unittest、`abh doctor` 和基础 smoke test。
+- 明确包版本和 README 功能版本之间的关系。
+
+不做：
+
+- 不实现 `verify run`。
+- 不重构核心模块。
+
+### plan-011-verify-runner
+
+范围：
+
+- 实现 `abh verify run <plan>`。
+- 执行 validation checklist 中的命令。
+- 保存退出码、耗时、输出摘要和 artifact。
+- 失败时自动阻断计划。
+
+不做：
+
+- 不实现 CI 服务端。
+- 不改变 audit 关闭规则。
+
+### plan-012-plan-update
+
+范围：
+
+- 支持更新 plan 的 goals、non-goals、exit criteria、validation checklist 和 closure evidence。
+- 确保更新后 JSON 与 Markdown 双写一致。
+
+不做：
+
+- 不引入交互式编辑器。
+
+## 8. 风险控制
+
 - 如果 roadmap、task-board、README 与 `.abh/` 状态不同步，仓库事实来源会再次分裂。
+- 如果模板过重，会降低使用率。模板必须短而硬。
+- 如果没有 active attractor 校验，后续 plan 仍可能绕过吸引子。
+- 如果 memory 只记录成功结论，会丢失真正有价值的失败轨迹。
+- 如果过早做 Web UI，会削弱 CLI 和 Agent 协议这条最关键路径。
