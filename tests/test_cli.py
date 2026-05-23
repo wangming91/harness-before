@@ -8,6 +8,7 @@ from unittest import TestCase
 import os
 
 from abh.cli import main
+from abh.models import AuditRecord, DriftReport, MemoryRecord, PlanRecord, VerificationRun
 
 
 class Chdir:
@@ -456,6 +457,37 @@ class CliTests(TestCase):
         self.assertEqual(code, 1)
         self.assertEqual(err, "")
         self.assertIn("orphan markdown for plan plan-doctor-orphan", out)
+
+    def test_model_serialization_includes_schema_version(self) -> None:
+        records = [
+            VerificationRun(id="ver-schema", plan_id="plan-schema", command="cmd", result="pass"),
+            AuditRecord(id="audit-schema", plan_id="plan-schema", auditor="auditor", scope="scope"),
+            MemoryRecord(
+                id="mem-schema",
+                memory_type="false_assumption",
+                summary="summary",
+                context="context",
+                implication="implication",
+            ),
+            DriftReport(id="drift-schema", source="source.txt"),
+            PlanRecord(id="plan-schema", title="Schema", attractor="attr", baseline="base"),
+        ]
+
+        for record in records:
+            self.assertEqual(record.to_dict()["schema_version"], "1")
+
+    def test_model_deserialization_allows_missing_schema_version(self) -> None:
+        plan = PlanRecord.from_dict(
+            {
+                "id": "plan-legacy",
+                "title": "Legacy",
+                "attractor": "attr",
+                "baseline": "base",
+            }
+        )
+
+        self.assertEqual(plan.id, "plan-legacy")
+        self.assertEqual(plan.to_dict()["schema_version"], "1")
 
     def test_route_injects_active_plans(self) -> None:
         self.run_cli(

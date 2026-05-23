@@ -9,6 +9,7 @@ VERIFICATION_RESULTS = ("pass", "fail", "partial")
 AUDIT_RESULTS = ("pass", "fail", "partial", "need_info")
 MEMORY_TYPES = ("false_assumption", "rejected_path", "divergent_pattern", "overturned_completion")
 DRIFT_TYPES = ("boundary_drift", "dependency_drift", "test_drift", "terminology_drift")
+SCHEMA_VERSION = "1"
 
 
 def utc_now() -> str:
@@ -27,6 +28,7 @@ class VerificationRun:
 
     def to_dict(self) -> dict[str, Any]:
         return {
+            "schema_version": SCHEMA_VERSION,
             "id": self.id,
             "plan_id": self.plan_id,
             "command": self.command,
@@ -92,6 +94,7 @@ class AuditRecord:
 
     def to_dict(self) -> dict[str, Any]:
         return {
+            "schema_version": SCHEMA_VERSION,
             "id": self.id,
             "plan_id": self.plan_id,
             "auditor": self.auditor,
@@ -143,6 +146,7 @@ class MemoryRecord:
 
     def to_dict(self) -> dict[str, Any]:
         return {
+            "schema_version": SCHEMA_VERSION,
             "id": self.id,
             "type": self.memory_type,
             "summary": self.summary,
@@ -183,6 +187,7 @@ class DriftFinding:
 
     def to_dict(self) -> dict[str, Any]:
         return {
+            "schema_version": SCHEMA_VERSION,
             "type": self.drift_type,
             "evidence": self.evidence,
             "recommendation": self.recommendation,
@@ -210,6 +215,7 @@ class DriftReport:
 
     def to_dict(self) -> dict[str, Any]:
         return {
+            "schema_version": SCHEMA_VERSION,
             "id": self.id,
             "source": self.source,
             "findings": [finding.to_dict() for finding in self.findings],
@@ -255,6 +261,7 @@ class PlanRecord:
 
     def to_dict(self) -> dict[str, Any]:
         return {
+            "schema_version": SCHEMA_VERSION,
             "id": self.id,
             "title": self.title,
             "attractor": self.attractor,
