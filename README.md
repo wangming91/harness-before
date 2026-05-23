@@ -39,19 +39,50 @@
 
 ## 安装
 
-项目要求 Python 3.13+。先确认版本：
+### 首选方式：uvx（无需安装 Python）
+
+`uv` 是一款代替 pip 的极速包管理工具，会自动下载匹配的 Python 版本。用户只需安装 `uv`，无需手动安装 Python。
+
+安装 uv（如已安装可跳过）：
+
+```bash
+# macOS / Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Windows (PowerShell)
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+直接运行 abh（uv 自动下载 Python 3.13+ 并构建项目）：
+
+```bash
+uvx --from git+https://github.com/worm-ai/harness-before.git abh --help
+```
+
+持久安装到 PATH（安装后可在任意目录直接使用 `abh`）：
+
+```bash
+uv tool install --from git+https://github.com/worm-ai/harness-before.git abh
+abh --help
+```
+
+### 备选：手动安装 Python（Python 3.13+）
+
+如果已有 Python 3.13+ 环境，可以走传统 pip 方式。
+
+确认版本：
 
 ```bash
 python3 --version
 ```
 
-推荐在仓库根目录做 editable install：
+推荐在仓库根目录做 editable install（Windows 用户请将 `python3` 替换为 `python` 或 `py -3`）：
 
 ```bash
 python3 -m pip install -e .
 ```
 
-安装后可以在任意目录使用 console script：
+安装后运行：
 
 ```bash
 abh --help

@@ -13,3 +13,7 @@ abh = "abh.cli:main"
 
 [tool.setuptools]
 packages = ["abh"]
+
+[tool.uv]
+# uv 零依赖安装方式兼容性声明
+# 本项目的 pyproject.toml 为标准 setuptools 格式，uv 可直接使用
