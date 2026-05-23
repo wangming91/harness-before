@@ -458,6 +458,24 @@ class CliTests(TestCase):
         self.assertEqual(err, "")
         self.assertIn("orphan markdown for plan plan-doctor-orphan", out)
 
+    def test_doctor_reports_missing_schema_version(self) -> None:
+        self.run_cli(
+            "plan", "create",
+            "--id", "plan-doctor-schema",
+            "--title", "Doctor Schema",
+            "--attractor", "docs/architecture/attractors/abh-core-attractor.md",
+            "--baseline", "baseline",
+        )
+        plan_path = self.root / ".abh" / "plans" / "plan-doctor-schema.json"
+        data = plan_path.read_text(encoding="utf-8")
+        plan_path.write_text(data.replace('  "schema_version": "1",\n', ""), encoding="utf-8")
+
+        code, out, err = self.run_cli("doctor")
+
+        self.assertEqual(code, 1)
+        self.assertEqual(err, "")
+        self.assertIn("missing schema_version for plan plan-doctor-schema", out)
+
     def test_model_serialization_includes_schema_version(self) -> None:
         records = [
             VerificationRun(id="ver-schema", plan_id="plan-schema", command="cmd", result="pass"),

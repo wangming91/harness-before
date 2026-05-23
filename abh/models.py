@@ -187,7 +187,6 @@ class DriftFinding:
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            "schema_version": SCHEMA_VERSION,
             "type": self.drift_type,
             "evidence": self.evidence,
             "recommendation": self.recommendation,

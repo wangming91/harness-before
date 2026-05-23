@@ -9,6 +9,13 @@
 
 当两条线发生冲突时，已关闭 plan 和 audit 是历史事实来源；长期阶段线是未来排期来源。新的 plan 应优先从长期阶段线中切出最小可关闭范围。
 
+## 1.1 术语说明
+
+- Sprint：时间盒或阶段性工作批次，用于描述项目推进节奏。
+- Plan：ABH 中可验证、可审计、可关闭的最小工作单元。
+- Sprint 编号和 plan 编号不要求一一对应。一个 Sprint 可以包含多个 plan，例如 Sprint 7 同时包含 `plan-007-sprint-7-dogfood` 和 `plan-007-zero-dep-install`；一个长期阶段也可以跨多个 Sprint 和 plan。
+- 从 Sprint 12 开始，建议 plan ID 按全局递增编号命名，避免把 Sprint 编号误认为 plan 编号。
+
 ## 2. 排期假设
 
 - 采用两周一个 Sprint。
@@ -18,6 +25,8 @@
 - 每个阶段都必须能被 plan、verification、audit 和 memory 闭环承接。
 
 ## 3. 历史执行线
+
+本节记录已经完成并审计关闭的历史事实。若本节与当前计划状态不一致，以 `.abh/` 中已关闭 plan 和对应 audit 为准。
 
 ### v0.1：文档与模型基线
 
@@ -111,13 +120,40 @@
 
 状态：已完成，对应 `plan-009-roadmap-phase-alignment`。
 
+### v0.8：内核治理硬化
+
+周期：Sprint 10
+
+目标：
+
+- 清理 `plan-200-demo` 遗留 draft 状态噪音。
+- 为核心 JSON 对象加入 `schema_version`。
+- 建立 CI 基础门禁。
+- 明确包版本和 README 功能版本之间的关系。
+- 把关闭后文档同步检查纳入治理门禁。
+
+状态：已完成，对应 `plan-010-core-governance-hardening`。
+
+### v0.9：阶段 1 治理收尾
+
+周期：Sprint 11
+
+目标：
+
+- 迁移历史 `.abh` JSON 对象补齐 `schema_version`。
+- 增强 `abh doctor`，检查缺失 `schema_version` 的核心 JSON 对象。
+- 在 CI 中补齐 editable install 路径。
+- 标记阶段 1 完成，并把下一轮路线推进到阶段 2。
+
+状态：已完成，对应 `plan-011-stage-1-finalization`。
+
 ## 4. 当前执行焦点
 
-当前准备进入 Sprint 11。
+当前准备进入 Sprint 12。
 
-下一轮建议只追求一个结果：把验证从人工记录升级为本地执行器，让 plan 的 validation checklist 能被 `abh` 直接运行和记录。
+阶段 1 已完成，下一轮建议进入阶段 2，只追求一个结果：把验证从人工记录升级为本地执行器，让 plan 的 validation checklist 能被 `abh` 直接运行和记录。
 
-建议计划：`plan-011-verify-runner`。
+建议计划：`plan-012-verify-runner`。
 
 ## 5. 长期阶段线
 
@@ -138,12 +174,13 @@
 
 当前状态：
 
-- 已完成：Sprint 6/7/8 纳入路线、`abh doctor` 第一版、路线图和看板同步、清理 `plan-200-demo`、新对象 schema version、CI 基础门禁、版本策略说明。
-- 未完成：更深的 schema 迁移工具、内容级 doctor 校验、正式发布节奏自动化。
+- 已完成：Sprint 6/7/8 纳入路线、`abh doctor` 第一版、路线图和看板同步、清理 `plan-200-demo`、新对象 schema version、历史 JSON schema 迁移、CI 基础门禁、editable install CI 路径、版本策略说明。
+- 阶段 1 判定：完成。阶段 1 的必需治理门禁已经具备，可以进入阶段 2。
+- 延期项：更深的内容级 doctor 校验和正式发布自动化，推迟到后续质量/发布计划，不阻塞阶段 2 启动。
 
 建议后续计划：
 
-- `plan-011-verify-runner`：把验证从人工记录升级为本地执行器。
+- `plan-012-verify-runner`：把验证从人工记录升级为本地执行器。
 
 ### 阶段 2：从“记录验证”升级到“执行验证”
 
@@ -257,7 +294,7 @@
 
 | 长期阶段 | 已完成历史计划 | 已完成内容 | 剩余内容 |
 | --- | --- | --- | --- |
-| 阶段 1：恢复权威基线，稳住内核 | `plan-006-stabilize`, `plan-007-zero-dep-install`, `plan-008-roadmap-sync-and-doctor`, `plan-009-roadmap-phase-alignment`, `plan-010-core-governance-hardening` | 历史计划迁移、安装门槛降低、`abh doctor`、路线图对齐、demo 清理、schema version、CI、版本策略 | 内容级 doctor、schema 迁移工具、发布自动化 |
+| 阶段 1：恢复权威基线，稳住内核 | `plan-006-stabilize`, `plan-007-zero-dep-install`, `plan-008-roadmap-sync-and-doctor`, `plan-009-roadmap-phase-alignment`, `plan-010-core-governance-hardening`, `plan-011-stage-1-finalization` | 历史计划迁移、安装门槛降低、`abh doctor`、路线图对齐、demo 清理、schema version、历史 schema 迁移、CI、版本策略 | 已完成；内容级 doctor、发布自动化转入后续质量/发布计划 |
 | 阶段 2：验证执行器 | `plan-002-sprint-2-local-plan-loop` | `verify record` 可记录验证结果 | `verify run`、失败自动证据、plan update、模块拆分 |
 | 阶段 3：Attractor Registry | `plan-001-sprint-1-foundation` | active attractor 文档和模板 | attractor CLI、版本迁移、active 校验 |
 | 阶段 4：真正独立审计 | `plan-003-sprint-3-audit-memory-close`, `plan-007-zero-dep-install`, `plan-008-roadmap-sync-and-doctor` | audit request/record/close 闭环，人工独立审计流程已 dogfood | audit prompt/bundle、独立上下文字段、关闭门禁 |

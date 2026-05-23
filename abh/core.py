@@ -58,6 +58,8 @@ class AbhError(RuntimeError):
     pass
 
 
+# Verification runs are JSON-only execution evidence today, so doctor excludes
+# them from JSON/Markdown consistency checks until they get a document model.
 DOCTOR_OBJECTS: tuple[tuple[str, str, Callable[[Path | None], Path], Callable[[Path | None], Path]], ...] = (
     ("plan", "plan-", plans_dir, docs_plans_dir),
     ("audit", "audit-", audits_dir, docs_audits_dir),
@@ -77,6 +79,11 @@ def doctor(cwd: Path | None = None) -> list[str]:
         json_dir = json_dir_factory(cwd)
         docs_dir = docs_dir_factory(cwd)
         json_ids = {path.stem for path in json_dir.glob("*.json")} if json_dir.exists() else set()
+        if json_dir.exists():
+            for path in sorted(json_dir.glob("*.json")):
+                data = read_json(path)
+                if data.get("schema_version") != "1":
+                    issues.append(f"missing schema_version for {label} {path.stem}")
         doc_ids = set()
         if docs_dir.exists():
             doc_ids = {

@@ -2,7 +2,7 @@
 
 ## 当前阶段
 
-Sprint 10：内核治理硬化
+Sprint 12：阶段 2 验证执行器准备
 
 ## 状态说明
 
@@ -129,3 +129,14 @@ Sprint 10：内核治理硬化
 | S10-004 | 增加 CI 基础门禁 | Done | `.github/workflows/ci.yml` |
 | S10-005 | 补充版本策略和关闭后文档同步门禁 | Done | `README.md`, `docs/development-roadmap.md` |
 | S10-006 | Sprint 10 独立审计 | Done | `docs/audits/audit-010-core-governance-hardening.md` |
+
+## Sprint 11
+
+| ID | 任务 | 状态 | 产出 |
+| --- | --- | --- | --- |
+| S11-001 | 创建阶段 1 收尾计划 | Done | `docs/plans/plan-011-stage-1-finalization.md` |
+| S11-002 | doctor 检查 schema_version | Done | `abh/core.py`, `tests/test_cli.py` |
+| S11-003 | 迁移历史 .abh JSON schema_version | Done | `.abh/` |
+| S11-004 | CI 增加 editable install 路径 | Done | `.github/workflows/ci.yml` |
+| S11-005 | roadmap 标记阶段 1 完成并顺延 verify-runner | Done | `docs/development-roadmap.md` |
+| S11-006 | Sprint 11 独立审计 | Done | `docs/audits/audit-011-stage-1-finalization.md` |
