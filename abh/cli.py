@@ -20,6 +20,7 @@ from .core import (
     record_verification,
     request_audit,
     route_question,
+    run_verification,
     search_memory,
     transition_plan,
     validate_identifier,
@@ -134,6 +135,12 @@ def build_parser() -> argparse.ArgumentParser:
     record.add_argument("--artifact", action="append", default=[])
     record.add_argument("--failed-check", action="append", default=[])
     record.set_defaults(handler=handle_verify_record)
+
+    run = verify_sub.add_parser("run", help="execute plan validation checklist")
+    run.add_argument("plan_id")
+    run.add_argument("--timeout", type=int, default=120)
+    add_json_argument(run)
+    run.set_defaults(handler=handle_verify_run)
 
     audit_parser = subparsers.add_parser("audit", help="manage independent audits")
     audit_sub = audit_parser.add_subparsers(dest="audit_command", required=True)
@@ -273,6 +280,27 @@ def handle_verify_record(args: argparse.Namespace) -> int:
     )
     print(f"recorded verification {run.id} for {args.plan_id}")
     return 0
+
+
+def handle_verify_run(args: argparse.Namespace) -> int:
+    run = run_verification(plan_id=args.plan_id, timeout_seconds=args.timeout)
+    if args.json:
+        print_json_envelope(
+            ok=run.result == "pass",
+            command=command_name(args),
+            data={"verification": run.to_dict()},
+            errors=[] if run.result == "pass" else [
+                {
+                    "code": "verification_failed",
+                    "message": "one or more validation checks failed",
+                    "category": "business_rule",
+                    "details": {"failed_checks": run.failed_checks},
+                }
+            ],
+        )
+        return 0 if run.result == "pass" else 1
+    print(f"ran verification {run.id} for {args.plan_id}: {run.result}")
+    return 0 if run.result == "pass" else 1
 
 
 def handle_audit_request(args: argparse.Namespace) -> int:

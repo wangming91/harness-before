@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import re
+import subprocess
+import time
 import uuid
 from collections.abc import Callable
 from pathlib import Path
@@ -255,6 +257,65 @@ def record_verification(
         plan.status = "blocked"
     save_plan(plan, cwd)
     return run
+
+
+def run_verification(
+    *,
+    plan_id: str,
+    timeout_seconds: int = 120,
+    cwd: Path | None = None,
+) -> VerificationRun:
+    plan = load_plan(plan_id, cwd)
+    if not plan.validation_checklist:
+        raise AbhError("plan has no validation checklist")
+    if timeout_seconds <= 0:
+        raise AbhError("timeout must be greater than zero")
+
+    root = Path.cwd() if cwd is None else Path(cwd)
+    artifacts: list[str] = []
+    failed_checks: list[str] = []
+    commands = list(plan.validation_checklist)
+
+    for command in commands:
+        started = time.perf_counter()
+        try:
+            completed = subprocess.run(
+                command,
+                cwd=root,
+                shell=True,
+                text=True,
+                capture_output=True,
+                timeout=timeout_seconds,
+                check=False,
+            )
+            duration = time.perf_counter() - started
+            stdout = completed.stdout.strip().replace("\n", "\\n")[:500]
+            stderr = completed.stderr.strip().replace("\n", "\\n")[:500]
+            artifacts.append(
+                f"command={command!r}; exit_code={completed.returncode}; duration_seconds={duration:.3f}; "
+                f"stdout={stdout!r}; stderr={stderr!r}"
+            )
+            if completed.returncode != 0:
+                failed_checks.append(command)
+        except subprocess.TimeoutExpired as exc:
+            duration = time.perf_counter() - started
+            stdout = (exc.stdout or "").strip().replace("\n", "\\n")[:500] if isinstance(exc.stdout, str) else ""
+            stderr = (exc.stderr or "").strip().replace("\n", "\\n")[:500] if isinstance(exc.stderr, str) else ""
+            artifacts.append(
+                f"command={command!r}; exit_code=timeout; duration_seconds={duration:.3f}; "
+                f"timeout_seconds={timeout_seconds}; stdout={stdout!r}; stderr={stderr!r}"
+            )
+            failed_checks.append(command)
+
+    result = "pass" if not failed_checks else "fail"
+    return record_verification(
+        plan_id=plan_id,
+        command=" && ".join(commands),
+        result=result,
+        artifacts=artifacts,
+        failed_checks=failed_checks,
+        cwd=cwd,
+    )
 
 
 def render_plan_markdown(plan: PlanRecord) -> str:

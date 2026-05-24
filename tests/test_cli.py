@@ -149,6 +149,129 @@ class CliTests(TestCase):
         self.assertEqual(code, 0, err)
         self.assertIn("plan-102-ready [blocked]", out)
 
+    def test_verify_run_executes_validation_checklist_and_records_pass(self) -> None:
+        code, out, err = self.run_cli(
+            "plan",
+            "create",
+            "--id",
+            "plan-103-runner-pass",
+            "--title",
+            "Runner Pass",
+            "--attractor",
+            "docs/architecture/attractors/abh-core-attractor.md",
+            "--baseline",
+            "baseline",
+            "--status",
+            "ready",
+            "--goal",
+            "execute validation commands",
+            "--non-goal",
+            "remote runner",
+            "--exit-criterion",
+            "verification run is recorded",
+            "--validation",
+            "python3 -c 'print(\"abh-runner-pass\")'",
+            "--closure-evidence",
+            "docs/plans/plan-103-runner-pass.md",
+        )
+        self.assertEqual(code, 0, err)
+        code, out, err = self.run_cli("verify", "run", "plan-103-runner-pass")
+        self.assertEqual(code, 0, err)
+        self.assertIn("ran verification", out)
+        self.assertIn("pass", out)
+
+        code, out, err = self.run_cli("plan", "status", "plan-103-runner-pass", "--json")
+        self.assertEqual(code, 0, err)
+        plan = json.loads(out)["data"]["plan"]
+        self.assertEqual(plan["status"], "ready")
+        self.assertEqual(len(plan["verification_runs"]), 1)
+        run_path = self.root / ".abh" / "verifications" / f"{plan['verification_runs'][0]}.json"
+        run = json.loads(run_path.read_text(encoding="utf-8"))
+        self.assertEqual(run["result"], "pass")
+        self.assertEqual(run["failed_checks"], [])
+        self.assertIn("python3 -c", run["command"])
+        self.assertTrue(any("exit_code=0" in artifact for artifact in run["artifacts"]))
+
+    def test_verify_run_records_failed_check_and_blocks_running_plan(self) -> None:
+        code, out, err = self.run_cli(
+            "plan",
+            "create",
+            "--id",
+            "plan-104-runner-fail",
+            "--title",
+            "Runner Fail",
+            "--attractor",
+            "docs/architecture/attractors/abh-core-attractor.md",
+            "--baseline",
+            "baseline",
+            "--status",
+            "ready",
+            "--goal",
+            "block on failed validation",
+            "--non-goal",
+            "remote runner",
+            "--exit-criterion",
+            "failure is recorded",
+            "--validation",
+            "python3 -c 'import sys; sys.exit(7)'",
+            "--closure-evidence",
+            "docs/plans/plan-104-runner-fail.md",
+        )
+        self.assertEqual(code, 0, err)
+        code, out, err = self.run_cli("plan", "transition", "plan-104-runner-fail", "--to", "running")
+        self.assertEqual(code, 0, err)
+
+        code, out, err = self.run_cli("verify", "run", "plan-104-runner-fail")
+        self.assertEqual(code, 1, err)
+        self.assertIn("ran verification", out)
+        self.assertIn("fail", out)
+
+        code, out, err = self.run_cli("plan", "status", "plan-104-runner-fail", "--json")
+        self.assertEqual(code, 0, err)
+        plan = json.loads(out)["data"]["plan"]
+        self.assertEqual(plan["status"], "blocked")
+        self.assertEqual(len(plan["verification_runs"]), 1)
+        run_path = self.root / ".abh" / "verifications" / f"{plan['verification_runs'][0]}.json"
+        run = json.loads(run_path.read_text(encoding="utf-8"))
+        self.assertEqual(run["result"], "fail")
+        self.assertEqual(run["failed_checks"], ["python3 -c 'import sys; sys.exit(7)'"])
+        self.assertTrue(any("exit_code=7" in artifact for artifact in run["artifacts"]))
+
+    def test_verify_run_json_returns_machine_readable_result(self) -> None:
+        code, out, err = self.run_cli(
+            "plan",
+            "create",
+            "--id",
+            "plan-105-runner-json",
+            "--title",
+            "Runner JSON",
+            "--attractor",
+            "docs/architecture/attractors/abh-core-attractor.md",
+            "--baseline",
+            "baseline",
+            "--status",
+            "ready",
+            "--goal",
+            "emit json verification result",
+            "--non-goal",
+            "mcp wrapper",
+            "--exit-criterion",
+            "json output is parseable",
+            "--validation",
+            "python3 -c 'print(\"abh-json\")'",
+            "--closure-evidence",
+            "docs/plans/plan-105-runner-json.md",
+        )
+        self.assertEqual(code, 0, err)
+
+        code, out, err = self.run_cli("verify", "run", "plan-105-runner-json", "--json")
+        self.assertEqual(code, 0, err)
+        payload = json.loads(out)
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["command"], "verify run")
+        self.assertEqual(payload["data"]["verification"]["result"], "pass")
+        self.assertEqual(payload["data"]["verification"]["failed_checks"], [])
+
     def test_invalid_ready_transition_is_rejected(self) -> None:
         code, out, err = self.run_cli(
             "plan",
