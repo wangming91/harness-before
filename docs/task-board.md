@@ -221,3 +221,13 @@ Sprint 16：阶段 3 Functional Plan（已完成）
 | S17-004 | 补充 trust/stale 回归测试 | Done | `tests/test_cli.py` |
 | S17-005 | 同步阶段 3 文档 | Done | `README.md`, `docs/development-roadmap.md`, `docs/阶段规划.md` |
 | S17-006 | plan-021 验证与独立审计 | Done | `.abh/verifications/ver-4b7d7719a801.json`, `docs/audits/audit-021-verification-trust-and-stale-detection.md` |
+
+## Sprint 18
+
+| ID | 任务 | 状态 | 产出 |
+| --- | --- | --- | --- |
+| S18-001 | 启动 Verification Failure Classification 计划 | Done | `docs/plans/plan-022-verification-failure-classification.md` |
+| S18-002 | 为 verification 记录补充 `failure_classifications` | Done | `abh/models.py`, `abh/verifications.py` |
+| S18-003 | 覆盖 validation failure、timeout、recursive guard 和 environment failure | Done | `tests/test_cli.py` |
+| S18-004 | 同步阶段 3 文档 | Done | `README.md`, `docs/development-roadmap.md`, `docs/阶段规划.md` |
+| S18-005 | plan-022 验证与独立审计 | Done | `.abh/verifications/ver-0b0b5694cf4f.json`, `docs/audits/audit-022-verification-failure-classification.md` |

@@ -7,6 +7,7 @@ import tempfile
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 from unittest import TestCase
+from unittest.mock import patch
 import os
 
 from abh.cli import main
@@ -452,6 +453,17 @@ class CliTests(TestCase):
         self.assertTrue(any("exit_code=7" in artifact for artifact in run["artifacts"]))
         self.assertEqual(run["environment"]["runner"]["check_count"], 1)
         self.assertEqual(run["environment"]["commands"][0]["argv"], ["python3", "-c", "import sys; sys.exit(7)"])
+        self.assertEqual(
+            run["failure_classifications"],
+            [
+                {
+                    "command": "python3 -c 'import sys; sys.exit(7)'",
+                    "category": "validation_failure",
+                    "message": "validation command exited with non-zero status",
+                    "details": {"exit_code": 7},
+                }
+            ],
+        )
 
     def test_verify_run_json_returns_machine_readable_result(self) -> None:
         code, out, err = self.run_cli(
@@ -487,6 +499,41 @@ class CliTests(TestCase):
         self.assertEqual(payload["command"], "verify run")
         self.assertEqual(payload["data"]["verification"]["result"], "pass")
         self.assertEqual(payload["data"]["verification"]["failed_checks"], [])
+
+    def test_verify_run_records_timeout_failure_classification(self) -> None:
+        code, out, err = self.run_cli(
+            "plan",
+            "create",
+            "--id",
+            "plan-114-timeout-classification",
+            "--title",
+            "Timeout Classification",
+            "--attractor",
+            "docs/architecture/attractors/abh-core-attractor.md",
+            "--baseline",
+            "baseline",
+            "--status",
+            "ready",
+            "--goal",
+            "classify timeout",
+            "--non-goal",
+            "retry command",
+            "--exit-criterion",
+            "timeout is classified",
+            "--validation",
+            "python3 -c 'import time; time.sleep(1)'",
+            "--closure-evidence",
+            "docs/plans/plan-114-timeout-classification.md",
+        )
+        self.assertEqual(code, 0, err)
+
+        code, out, err = self.run_cli("verify", "run", "plan-114-timeout-classification", "--json", "--timeout", "1")
+        self.assertEqual(code, 1, err)
+        verification = json.loads(out)["data"]["verification"]
+        self.assertEqual(verification["result"], "fail")
+        self.assertEqual(verification["failure_classifications"][0]["category"], "timeout")
+        self.assertEqual(verification["failure_classifications"][0]["command"], "python3 -c 'import time; time.sleep(1)'")
+        self.assertEqual(verification["failure_classifications"][0]["details"]["timeout_seconds"], 1)
 
     def test_verify_run_records_environment_metadata(self) -> None:
         code, out, err = self.run_cli(
@@ -711,6 +758,51 @@ class CliTests(TestCase):
             ["python3", "-m", "abh", "verify", "run", "plan-110-recursive-environment"],
         )
         self.assertTrue(any("recursive_verify_guard" in artifact for artifact in verification["artifacts"]))
+        self.assertEqual(verification["failure_classifications"][0]["category"], "recursive_guard")
+        self.assertEqual(
+            verification["failure_classifications"][0]["command"],
+            "python3 -m abh verify run plan-110-recursive-environment",
+        )
+
+    def test_verify_run_records_environment_failure_classification_for_runner_exception(self) -> None:
+        code, out, err = self.run_cli(
+            "plan",
+            "create",
+            "--id",
+            "plan-115-environment-classification",
+            "--title",
+            "Environment Classification",
+            "--attractor",
+            "docs/architecture/attractors/abh-core-attractor.md",
+            "--baseline",
+            "baseline",
+            "--status",
+            "ready",
+            "--goal",
+            "classify runner exception",
+            "--non-goal",
+            "repair environment",
+            "--exit-criterion",
+            "runner exception is classified",
+            "--validation",
+            "python3 -c 'print(\"unused\")'",
+            "--closure-evidence",
+            "docs/plans/plan-115-environment-classification.md",
+        )
+        self.assertEqual(code, 0, err)
+
+        def raise_os_error(*args, **kwargs):
+            raise OSError("spawn failed")
+
+        with patch("abh.verifications.subprocess.run", side_effect=raise_os_error):
+            code, out, err = self.run_cli("verify", "run", "plan-115-environment-classification", "--json")
+
+        self.assertEqual(code, 1, err)
+        verification = json.loads(out)["data"]["verification"]
+        self.assertEqual(verification["result"], "fail")
+        self.assertEqual(verification["failed_checks"], ["python3 -c 'print(\"unused\")'"])
+        self.assertEqual(verification["failure_classifications"][0]["category"], "environment_failure")
+        self.assertEqual(verification["failure_classifications"][0]["details"]["exception_type"], "OSError")
 
     def test_git_status_hash_ignores_abh_runtime_evidence_paths(self) -> None:
         status = "\n".join(
@@ -1190,6 +1282,7 @@ class CliTests(TestCase):
         )
         self.assertEqual(verification.environment, {})
         self.assertEqual(verification.trust_level, "unknown")
+        self.assertEqual(verification.failure_classifications, [])
 
         plan = PlanRecord.from_dict(
             {

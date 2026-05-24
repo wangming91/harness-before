@@ -36,6 +36,7 @@ def record_verification(
     result: str,
     artifacts: list[str] | None = None,
     failed_checks: list[str] | None = None,
+    failure_classifications: list[dict[str, object]] | None = None,
     environment: dict | None = None,
     trust_level: str = "manual_record",
     cwd: Path | None = None,
@@ -57,6 +58,7 @@ def record_verification(
         result=result,
         artifacts=list(artifacts or []),
         failed_checks=list(failed_checks or []),
+        failure_classifications=[dict(item) for item in failure_classifications or []],
         environment=metadata,
         trust_level=trust_level,
     )
@@ -142,6 +144,21 @@ def split_command(command: str) -> list[str]:
         return []
 
 
+def failure_classification(
+    *,
+    command: str,
+    category: str,
+    message: str,
+    details: dict[str, object] | None = None,
+) -> dict[str, object]:
+    return {
+        "command": command,
+        "category": category,
+        "message": message,
+        "details": dict(details or {}),
+    }
+
+
 def environment_snapshot(*, root: Path, commands: list[str], timeout_seconds: int) -> dict[str, object]:
     env_allowlist = {name: os.environ[name] for name in ("CI", "VIRTUAL_ENV") if name in os.environ}
     return {
@@ -174,6 +191,7 @@ def run_verification(
     root = Path.cwd() if cwd is None else Path(cwd)
     artifacts: list[str] = []
     failed_checks: list[str] = []
+    failure_classifications: list[dict[str, object]] = []
     commands = list(plan.validation_checklist)
     environment = environment_snapshot(root=root, commands=commands, timeout_seconds=timeout_seconds)
 
@@ -181,6 +199,13 @@ def run_verification(
         if is_recursive_verify_command(command, plan_id):
             artifacts.append(f"command={command!r}; exit_code=recursive_verify_guard")
             failed_checks.append(command)
+            failure_classifications.append(
+                failure_classification(
+                    command=command,
+                    category="recursive_guard",
+                    message="validation command would recursively invoke verify run for the same plan",
+                )
+            )
             continue
         started = time.perf_counter()
         try:
@@ -202,6 +227,14 @@ def run_verification(
             )
             if completed.returncode != 0:
                 failed_checks.append(command)
+                failure_classifications.append(
+                    failure_classification(
+                        command=command,
+                        category="validation_failure",
+                        message="validation command exited with non-zero status",
+                        details={"exit_code": completed.returncode},
+                    )
+                )
         except subprocess.TimeoutExpired as exc:
             duration = time.perf_counter() - started
             stdout = (exc.stdout or "").strip().replace("\n", "\\n")[:500] if isinstance(exc.stdout, str) else ""
@@ -211,6 +244,29 @@ def run_verification(
                 f"timeout_seconds={timeout_seconds}; stdout={stdout!r}; stderr={stderr!r}"
             )
             failed_checks.append(command)
+            failure_classifications.append(
+                failure_classification(
+                    command=command,
+                    category="timeout",
+                    message="validation command exceeded timeout",
+                    details={"timeout_seconds": timeout_seconds},
+                )
+            )
+        except OSError as exc:
+            duration = time.perf_counter() - started
+            artifacts.append(
+                f"command={command!r}; exit_code=environment_error; duration_seconds={duration:.3f}; "
+                f"exception_type={type(exc).__name__!r}; error={str(exc)!r}"
+            )
+            failed_checks.append(command)
+            failure_classifications.append(
+                failure_classification(
+                    command=command,
+                    category="environment_failure",
+                    message="validation command could not be executed by the local runner",
+                    details={"exception_type": type(exc).__name__},
+                )
+            )
 
     result = "pass" if not failed_checks else "fail"
     return record_verification(
@@ -219,6 +275,7 @@ def run_verification(
         result=result,
         artifacts=artifacts,
         failed_checks=failed_checks,
+        failure_classifications=failure_classifications,
         environment=environment,
         trust_level="local_shell",
         cwd=cwd,

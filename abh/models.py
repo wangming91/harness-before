@@ -25,6 +25,7 @@ class VerificationRun:
     result: str
     artifacts: list[str] = field(default_factory=list)
     failed_checks: list[str] = field(default_factory=list)
+    failure_classifications: list[dict[str, Any]] = field(default_factory=list)
     environment: dict[str, Any] = field(default_factory=dict)
     trust_level: str = "unknown"
     created_at: str = field(default_factory=utc_now)
@@ -38,6 +39,7 @@ class VerificationRun:
             "result": self.result,
             "artifacts": list(self.artifacts),
             "failed_checks": list(self.failed_checks),
+            "failure_classifications": [dict(item) for item in self.failure_classifications],
             "environment": dict(self.environment),
             "trust_level": self.trust_level,
             "created_at": self.created_at,
@@ -52,6 +54,7 @@ class VerificationRun:
             result=data["result"],
             artifacts=list(data.get("artifacts", [])),
             failed_checks=list(data.get("failed_checks", [])),
+            failure_classifications=[dict(item) for item in data.get("failure_classifications", [])],
             environment=dict(data.get("environment", {})),
             trust_level=data.get("trust_level", "unknown"),
             created_at=data.get("created_at", utc_now()),
