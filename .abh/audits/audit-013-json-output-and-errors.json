@@ -1,0 +1,81 @@
+{
+  "schema_version": "1",
+  "id": "audit-013-json-output-and-errors",
+  "plan_id": "plan-013-json-output-and-errors",
+  "auditor": "independent-auditor",
+  "scope": "检查 plan-013 是否完成 JSON 输出与结构化错误：核心读命令是否支持 --json envelope，AbhError 是否在 --json 模式下结构化输出且保留返回码，doctor --json 是否可解析一致性问题，默认人类输出是否未破坏，Non-Goals 是否未越界实现 MCP/Agent 写操作/verify run",
+  "status": "complete",
+  "result": "pass",
+  "rationale": "All exit criteria verified, non-goals respected, Agent Protocol principles followed, verification evidence real and reproducible.",
+  "evidence": [
+    "docs/plans/plan-013-json-output-and-errors.md",
+    "docs/architecture/agent-protocol.md",
+    "README.md",
+    "abh/cli.py",
+    "tests/test_cli.py",
+    "docs/development-roadmap.md",
+    "docs/task-board.md",
+    ".abh/verifications/ver-e829d1a51d40.json",
+    ".abh/verifications/ver-8954af0c8f45.json",
+    ".abh/verifications/ver-abf4fff7ac18.json",
+    ".abh/verifications/ver-be219e433df4.json",
+    ".abh/verifications/ver-fb3c8a98b7f5.json"
+  ],
+  "findings": [
+    {
+      "severity": "Info",
+      "finding": "All 7 read commands implement --json with uniform envelope",
+      "evidence": "abh/cli.py; tests/test_cli.py",
+      "recommendation": "None"
+    },
+    {
+      "severity": "Info",
+      "finding": "--json for drift analyze also implemented beyond minimum read-command exit criteria",
+      "evidence": "abh/cli.py; tests/test_cli.py",
+      "recommendation": "None"
+    },
+    {
+      "severity": "Info",
+      "finding": "AbhError in --json mode returns code 2 with structured errors",
+      "evidence": "abh/cli.py; tests/test_cli.py",
+      "recommendation": "None"
+    },
+    {
+      "severity": "Info",
+      "finding": "doctor --json returns code 1 with data.issues parseable",
+      "evidence": "abh/cli.py; tests/test_cli.py",
+      "recommendation": "None"
+    },
+    {
+      "severity": "Info",
+      "finding": "22/22 tests pass and default human output is preserved",
+      "evidence": "tests/test_cli.py",
+      "recommendation": "None"
+    },
+    {
+      "severity": "Info",
+      "finding": "Non-Goals respected: no MCP Server, Agent write operation, verify run, or default text-output replacement",
+      "evidence": "abh/cli.py; repository diff",
+      "recommendation": "None"
+    },
+    {
+      "severity": "Info",
+      "finding": "Agent Protocol principles followed: explicit JSON mode, CLI substrate, repository source of truth",
+      "evidence": "docs/architecture/agent-protocol.md; abh/cli.py",
+      "recommendation": "None"
+    },
+    {
+      "severity": "Informational",
+      "finding": "Audit evidence lists two extra verification files not referenced by plan verification_runs",
+      "evidence": "audit evidence includes ver-8954af0c8f45 and ver-be219e433df4; plan lists five verification runs",
+      "recommendation": "No blocking action; avoid parallel writes to the same plan record"
+    }
+  ],
+  "follow_ups": [
+    "Close plan-013 after recording this audit",
+    "Start plan-014-readonly-mcp-server"
+  ],
+  "created_at": "2026-05-24T02:18:04.355776+00:00",
+  "updated_at": "2026-05-24T02:27:17.359827+00:00",
+  "doc_path": "/Users/cc/ai/harness-before/docs/audits/audit-013-json-output-and-errors.md"
+}
