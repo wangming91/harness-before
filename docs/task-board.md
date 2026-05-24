@@ -2,7 +2,7 @@
 
 ## 当前阶段
 
-Sprint 12：阶段 2 Agent Protocol Foundation
+Sprint 12：阶段 2 Agent Protocol Foundation（已完成，v0.2.0）
 
 ## 状态说明
 
@@ -154,4 +154,8 @@ Sprint 12：阶段 2 Agent Protocol Foundation
 | S12-007 | 为核心读命令实现 `--json` 输出 | Done | `abh/cli.py`, `tests/test_cli.py` |
 | S12-008 | 补充 JSON 输出使用说明 | Done | `README.md` |
 | S12-009 | plan-013 验证与独立审计 | Done | `docs/audits/audit-013-json-output-and-errors.md` |
-| S12-010 | 启动只读 MCP Server 计划 | Todo | `plan-014-readonly-mcp-server` |
+| S12-010 | 启动只读 MCP Server 计划 | Done | `docs/plans/plan-014-readonly-mcp-server.md` |
+| S12-011 | 实现只读 MCP stdio Server | Done | `abh/mcp_server.py` |
+| S12-012 | 补充 MCP contract 测试 | Done | `tests/test_cli.py` |
+| S12-013 | 同步 MCP 使用说明和路线文档 | Done | `README.md`, `docs/architecture/agent-protocol.md`, `docs/development-roadmap.md` |
+| S12-014 | plan-014 验证与独立审计 | Done | `docs/audits/audit-014-readonly-mcp-server.md` |

@@ -10,6 +10,7 @@ import os
 
 from abh.cli import main
 from abh.models import AuditRecord, DriftReport, MemoryRecord, PlanRecord, VerificationRun
+from abh.storage import drift_json_path, write_json
 
 
 class Chdir:
@@ -661,3 +662,239 @@ class CliTests(TestCase):
         self.assertEqual(code, 0, err)
         self.assertIn("boundary_drift", out)
         self.assertIn("plan non-goal violation", out)
+
+
+class McpServerTests(TestCase):
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        (self.root / "docs" / "architecture" / "attractors").mkdir(parents=True, exist_ok=True)
+        (self.root / "docs" / "architecture" / "attractors" / "abh-core-attractor.md").write_text("# Attractor\n", encoding="utf-8")
+
+    def tearDown(self) -> None:
+        self.tmp.cleanup()
+
+    def run_cli(self, *args: str) -> tuple[int, str, str]:
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+        with Chdir(self.root), redirect_stdout(stdout), redirect_stderr(stderr):
+            code = main(list(args))
+        return code, stdout.getvalue(), stderr.getvalue()
+
+    def create_ready_plan(self, plan_id: str = "plan-mcp-contract") -> None:
+        code, out, err = self.run_cli(
+            "plan",
+            "create",
+            "--id",
+            plan_id,
+            "--title",
+            "MCP Contract Plan",
+            "--attractor",
+            "docs/architecture/attractors/abh-core-attractor.md",
+            "--baseline",
+            "baseline",
+            "--status",
+            "ready",
+            "--goal",
+            "expose readonly mcp",
+            "--non-goal",
+            "write tools",
+            "--exit-criterion",
+            "mcp tests pass",
+            "--validation",
+            "unit tests pass",
+            "--closure-evidence",
+            "tests/test_cli.py",
+        )
+        self.assertEqual(code, 0, err)
+
+    def call_mcp(self, message: dict[str, object]) -> dict[str, object]:
+        from abh.mcp_server import handle_message
+
+        with Chdir(self.root):
+            response = handle_message(message)
+        self.assertIsNotNone(response)
+        assert response is not None
+        return response
+
+    def test_mcp_initialize_and_tools_list_exposes_readonly_tools(self) -> None:
+        init_response = self.call_mcp(
+            {
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "initialize",
+                "params": {
+                    "protocolVersion": "2025-11-25",
+                    "capabilities": {},
+                    "clientInfo": {"name": "test-client", "version": "0.0.1"},
+                },
+            }
+        )
+
+        self.assertEqual(init_response["jsonrpc"], "2.0")
+        self.assertEqual(init_response["id"], 1)
+        init_result = init_response["result"]
+        self.assertEqual(init_result["protocolVersion"], "2025-11-25")
+        self.assertEqual(init_result["capabilities"]["tools"]["listChanged"], False)
+        self.assertEqual(init_result["serverInfo"]["name"], "abh")
+
+        list_response = self.call_mcp({"jsonrpc": "2.0", "id": 2, "method": "tools/list"})
+        tools = list_response["result"]["tools"]
+        tool_names = {tool["name"] for tool in tools}
+        self.assertEqual(
+            tool_names,
+            {
+                "abh_plan_list",
+                "abh_plan_status",
+                "abh_audit_list",
+                "abh_memory_list",
+                "abh_memory_search",
+                "abh_route",
+                "abh_doctor",
+                "abh_drift_list",
+            },
+        )
+        for tool in tools:
+            self.assertEqual(tool["inputSchema"]["type"], "object")
+            self.assertTrue(tool["annotations"]["readOnlyHint"])
+
+    def test_mcp_tools_call_returns_structured_content_for_core_reads(self) -> None:
+        self.create_ready_plan()
+
+        response = self.call_mcp(
+            {
+                "jsonrpc": "2.0",
+                "id": 3,
+                "method": "tools/call",
+                "params": {
+                    "name": "abh_plan_status",
+                    "arguments": {"plan_id": "plan-mcp-contract"},
+                },
+            }
+        )
+
+        result = response["result"]
+        self.assertFalse(result["isError"])
+        self.assertEqual(result["content"][0]["type"], "text")
+        envelope = result["structuredContent"]
+        self.assertTrue(envelope["ok"])
+        self.assertEqual(envelope["command"], "abh_plan_status")
+        self.assertEqual(envelope["data"]["plan"]["id"], "plan-mcp-contract")
+
+        doctor_response = self.call_mcp(
+            {
+                "jsonrpc": "2.0",
+                "id": 4,
+                "method": "tools/call",
+                "params": {"name": "abh_doctor", "arguments": {}},
+            }
+        )
+        doctor_envelope = doctor_response["result"]["structuredContent"]
+        self.assertTrue(doctor_envelope["ok"])
+        self.assertEqual(doctor_envelope["data"]["issues"], [])
+
+        route_response = self.call_mcp(
+            {
+                "jsonrpc": "2.0",
+                "id": 5,
+                "method": "tools/call",
+                "params": {
+                    "name": "abh_route",
+                    "arguments": {"question": "Can we close this plan?"},
+                },
+            }
+        )
+        route_envelope = route_response["result"]["structuredContent"]
+        self.assertEqual(route_envelope["data"]["route"]["route"], "completion_audit")
+
+    def test_mcp_drift_list_reads_existing_reports_without_writing(self) -> None:
+        with Chdir(self.root):
+            report = DriftReport(id="drift-mcp-existing", source="source.txt")
+            write_json(drift_json_path(report.id), report.to_dict())
+
+        response = self.call_mcp(
+            {
+                "jsonrpc": "2.0",
+                "id": 6,
+                "method": "tools/call",
+                "params": {"name": "abh_drift_list", "arguments": {}},
+            }
+        )
+
+        envelope = response["result"]["structuredContent"]
+        self.assertTrue(envelope["ok"])
+        self.assertEqual(envelope["data"]["total"], 1)
+        self.assertEqual(envelope["data"]["drift_reports"][0]["id"], "drift-mcp-existing")
+
+    def test_mcp_errors_are_structured(self) -> None:
+        unknown_response = self.call_mcp(
+            {
+                "jsonrpc": "2.0",
+                "id": 7,
+                "method": "tools/call",
+                "params": {"name": "abh_missing_tool", "arguments": {}},
+            }
+        )
+        self.assertEqual(unknown_response["error"]["code"], -32601)
+        self.assertEqual(unknown_response["error"]["data"]["category"], "not_found")
+
+        tool_error_response = self.call_mcp(
+            {
+                "jsonrpc": "2.0",
+                "id": 8,
+                "method": "tools/call",
+                "params": {
+                    "name": "abh_plan_status",
+                    "arguments": {"plan_id": "missing-plan"},
+                },
+            }
+        )
+        result = tool_error_response["result"]
+        self.assertTrue(result["isError"])
+        envelope = result["structuredContent"]
+        self.assertFalse(envelope["ok"])
+        self.assertEqual(envelope["errors"][0]["category"], "not_found")
+
+    def test_mcp_doctor_consistency_errors_include_issues(self) -> None:
+        self.create_ready_plan("plan-mcp-doctor")
+        (self.root / "docs" / "plans" / "plan-mcp-doctor.md").unlink()
+
+        response = self.call_mcp(
+            {
+                "jsonrpc": "2.0",
+                "id": 9,
+                "method": "tools/call",
+                "params": {"name": "abh_doctor", "arguments": {}},
+            }
+        )
+
+        result = response["result"]
+        self.assertTrue(result["isError"])
+        envelope = result["structuredContent"]
+        self.assertFalse(envelope["ok"])
+        self.assertEqual(envelope["data"]["issues"], ["missing markdown for plan plan-mcp-doctor"])
+        self.assertEqual(envelope["errors"][0]["code"], "doctor_issues")
+        self.assertEqual(envelope["errors"][0]["category"], "consistency")
+
+    def test_mcp_stdio_processes_newline_delimited_messages(self) -> None:
+        from abh.mcp_server import serve_stdio
+
+        input_stream = io.StringIO(
+            "\n".join(
+                [
+                    json.dumps({"jsonrpc": "2.0", "id": 1, "method": "tools/list"}),
+                    "not-json",
+                    json.dumps({"jsonrpc": "2.0", "method": "notifications/initialized"}),
+                ]
+            )
+        )
+        output_stream = io.StringIO()
+
+        with Chdir(self.root):
+            exit_code = serve_stdio(input_stream=input_stream, output_stream=output_stream)
+
+        self.assertEqual(exit_code, 0)
+        lines = [json.loads(line) for line in output_stream.getvalue().splitlines()]
+        self.assertEqual(lines[0]["id"], 1)
+        self.assertIn("tools", lines[0]["result"])
+        self.assertEqual(lines[1]["error"]["code"], -32700)

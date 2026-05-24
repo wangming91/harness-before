@@ -1,0 +1,56 @@
+{
+  "schema_version": "1",
+  "id": "plan-014-readonly-mcp-server",
+  "title": "Read-only MCP Server",
+  "attractor": "docs/architecture/attractors/abh-core-attractor.md",
+  "baseline": "docs/development-roadmap.md",
+  "owner": "platform",
+  "status": "closed",
+  "goals": [
+    "实现只读 MCP stdio Server，让 Agent 能通过 tools/list 和 tools/call 读取 ABH 状态",
+    "暴露 plan、audit、memory、route、drift、doctor 的只读工具 schema",
+    "保持零外部运行时依赖，并复用现有 core/model 行为"
+  ],
+  "non_goals": [
+    "不实现 MCP 写操作",
+    "不实现 verify run",
+    "不引入 Web UI 或外部数据库",
+    "不绕过现有 plan/audit/doctor 门禁"
+  ],
+  "exit_criteria": [
+    "提供可通过 python3 -m abh.mcp_server 启动的 stdio JSON-RPC 只读 MCP Server",
+    "initialize、tools/list、tools/call 支持核心只读工具并返回 MCP content 结构",
+    "未知工具、非法 JSON、业务错误返回结构化 JSON-RPC error",
+    "新增 MCP contract 测试覆盖工具列表、plan status、doctor、route 和错误路径",
+    "README、agent-protocol、roadmap、task-board 同步 plan-014 状态和 MCP 使用方式"
+  ],
+  "validation_checklist": [
+    "python3 -m unittest tests/test_cli.py -v",
+    "python3 -m abh doctor",
+    "python3 -m abh.mcp_server < MCP smoke input"
+  ],
+  "closure_evidence": [
+    "abh/mcp_server.py",
+    "tests/test_cli.py",
+    "README.md",
+    "docs/architecture/agent-protocol.md",
+    "docs/development-roadmap.md",
+    "docs/task-board.md",
+    "docs/memory/mem-verify-record-serial-001.md",
+    "audit-014-readonly-mcp-server"
+  ],
+  "verification_runs": [
+    "ver-d19e291e25c2",
+    "ver-51297abb60e4",
+    "ver-ef39e8c4e9d9",
+    "ver-41e31b948c51",
+    "ver-13b129d439f4",
+    "ver-f5b8c84c0a02"
+  ],
+  "audit_ids": [
+    "audit-014-readonly-mcp-server"
+  ],
+  "created_at": "2026-05-24T03:13:23.233756+00:00",
+  "updated_at": "2026-05-24T03:32:38.200303+00:00",
+  "doc_path": "/Users/cc/ai/harness-before/docs/plans/plan-014-readonly-mcp-server.md"
+}

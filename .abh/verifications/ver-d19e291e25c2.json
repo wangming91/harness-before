@@ -1,0 +1,13 @@
+{
+  "schema_version": "1",
+  "id": "ver-d19e291e25c2",
+  "plan_id": "plan-014-readonly-mcp-server",
+  "command": "python3 -m unittest tests/test_cli.py -v",
+  "result": "pass",
+  "artifacts": [
+    "tests/test_cli.py",
+    "abh/mcp_server.py"
+  ],
+  "failed_checks": [],
+  "created_at": "2026-05-24T03:22:51.179905+00:00"
+}

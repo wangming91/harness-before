@@ -116,12 +116,22 @@ The first MCP Server should be read-only.
 
 Allowed tools:
 
-- read plan status
-- list plans
-- list audits
-- list/search memory
-- route a question
-- run doctor
+- `abh_plan_list`
+- `abh_plan_status`
+- `abh_audit_list`
+- `abh_memory_list`
+- `abh_memory_search`
+- `abh_route`
+- `abh_doctor`
+- `abh_drift_list`
+
+Current entrypoint:
+
+```bash
+python3 -m abh.mcp_server
+```
+
+The server uses stdio JSON-RPC messages and returns MCP tool results with both text content and `structuredContent`. All current MCP tools are read-only. `abh_drift_list` lists existing drift reports; drift analysis remains a CLI write path because it creates reports and optional memory.
 
 Deferred tools:
 
@@ -150,7 +160,11 @@ Write tools must:
 
 - `plan-012-agent-protocol-foundation`: completed; defined this protocol baseline and aligned roadmap/task-board.
 - `plan-013-json-output-and-errors`: completed; implemented JSON output and structured errors for read commands.
-- `plan-014-readonly-mcp-server`: expose read-only MCP tools over the JSON/internal object contract.
+- `plan-014-readonly-mcp-server`: completed; exposes read-only MCP tools over the JSON/internal object contract.
+
+## Milestone Status
+
+Stage 2 / Agent Protocol Foundation is complete as of v0.2.0. ABH now has explicit JSON CLI contracts, structured errors, and a read-only MCP Server. Controlled write MCP tools remain a later extension and require a separate gate design before implementation.
 
 ## Non-goals
 

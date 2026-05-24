@@ -111,7 +111,7 @@ python3 -m unittest tests/test_cli.py
 
 项目版本以 `pyproject.toml` 的 `[project].version` 和 `abh.__version__` 为准，两者必须保持一致。README 中声明的新 CLI 能力、安装方式或运行要求发生变化时，必须同步检查版本是否需要提升，并在对应 plan 的 closure evidence 中说明。
 
-当前版本仍为 `0.1.0`，表示本项目处于本地优先的早期治理工具阶段；新增能力可以先通过 Git 安装路径 dogfood，进入稳定发布节奏后再提升到新的公开版本。
+当前版本为 `0.2.0`，对应阶段 2 Agent Protocol Foundation：项目已经具备显式 JSON CLI contract、结构化错误输出和只读 MCP Server。MCP 写操作仍属于后续扩展，需要单独设计门禁后再开放。
 
 ## CI 与关闭门禁
 
@@ -310,6 +310,27 @@ abh doctor --json
 
 JSON envelope 包含 `schema_version`、`ok`、`command`、`data`、`errors` 和 `warnings`。当 ABH 业务错误发生时，`--json` 模式会把错误写入 `errors`，并保留现有返回码语义。
 
+### 14. 只读 MCP Server
+
+ABH 提供一个零外部运行时依赖的只读 MCP stdio Server，供支持 MCP 的 Agent 通过工具协议读取治理状态：
+
+```bash
+python3 -m abh.mcp_server
+```
+
+当前 MCP 工具均为只读：
+
+- `abh_plan_list`
+- `abh_plan_status`
+- `abh_audit_list`
+- `abh_memory_list`
+- `abh_memory_search`
+- `abh_route`
+- `abh_doctor`
+- `abh_drift_list`
+
+这些工具复用现有 `.abh/` JSON 和 core/model 行为，返回包含 `structuredContent` 的 MCP tool result。MCP 写操作暂不开放；创建计划、记录验证、记录审计、关闭计划和写 memory 仍必须通过 CLI 与现有 ABH 门禁完成。
+
 ## 项目结构
 
 - `abh/`：CLI 和核心逻辑
@@ -332,7 +353,8 @@ JSON envelope 包含 `schema_version`、`ok`、`command`、`data`、`errors` 和
 
 当前仓库已经覆盖计划、验证、审计、关闭、记忆、路由和基础漂移分析。后续计划：
 
-- 推进 `plan-014-readonly-mcp-server`，把 JSON contract 封装为只读 MCP 工具
+- 推进阶段 3：实现 `abh verify run <plan>`，把验证从人工记录升级为本地执行器
+- 在正式开放 MCP 写操作前，先设计受控写工具门禁
 - 提升漂移分析精度：从关键词匹配升级到更高质量的证据提取
 - 增加 `abh report`，展示计划关闭率、审计驳回率和重复漂移情况
 - 支持 Git hook 集成，在提交前自动验证状态一致性

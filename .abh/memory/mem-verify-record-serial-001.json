@@ -1,0 +1,20 @@
+{
+  "schema_version": "1",
+  "id": "mem-verify-record-serial-001",
+  "type": "divergent_pattern",
+  "summary": "Parallel verify record can drop plan verification references",
+  "context": "During plan-014, three python3 -m abh verify record commands were run in parallel. All three verification JSON files were created, but the plan record kept only two verification run references because each command read and rewrote the same plan file independently.",
+  "implication": "Run .abh state-mutating commands sequentially unless the command itself has concurrency control; otherwise plan/audit/memory indexes can lose updates even when individual JSON artifacts exist.",
+  "status": "active",
+  "related": [
+    "plan-014-readonly-mcp-server"
+  ],
+  "evidence": [
+    ".abh/plans/plan-014-readonly-mcp-server.json",
+    ".abh/verifications/ver-51297abb60e4.json"
+  ],
+  "deprecation_policy": "Mark deprecated when evidence no longer applies.",
+  "created_at": "2026-05-24T03:24:48.321609+00:00",
+  "updated_at": "2026-05-24T03:24:48.321808+00:00",
+  "doc_path": "/Users/cc/ai/harness-before/docs/memory/mem-verify-record-serial-001.md"
+}

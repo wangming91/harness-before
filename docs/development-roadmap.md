@@ -177,16 +177,18 @@
 
 当前处于 Sprint 12 后半段。
 
-`plan-013-json-output-and-errors` 已关闭，核心只读命令已经具备显式 JSON 输出和结构化错误格式。当前焦点进入阶段 2 的下一步：把这些 JSON/internal object contracts 封装为只读 MCP Server，让 Agent 能通过工具协议读取 ABH 状态。
+`plan-014-readonly-mcp-server` 已关闭。核心只读命令已经具备显式 JSON 输出和结构化错误格式，并已封装为只读 MCP stdio Server；当前焦点是阶段 2 后半：在只读工具稳定的前提下，评估是否切出受控 MCP 写操作计划。
 
-当前建议启动计划：`plan-014-readonly-mcp-server`。
+当前执行计划：暂无 running plan。
 
 当前阶段状态：
 
 - 已完成：`plan-012-agent-protocol-foundation`、`plan-013-json-output-and-errors`。
-- 进行中：尚未启动新的 running plan。
-- 下一步：创建并执行 `plan-014-readonly-mcp-server`。
-- 不进入：Agent 写操作、verify runner、Attractor Registry；这些分别属于阶段 2 后半或后续阶段。
+- 已完成：`plan-014-readonly-mcp-server`。
+- 阶段 2 判定：完成。ABH 已具备 Agent Protocol 基线、机器可解析 JSON contract、结构化错误和只读 MCP 工具入口。
+- 当前里程碑：v0.2.0 Agent Protocol Foundation。
+- 下一步：进入阶段 3 验证执行器，或在正式开放写能力前单独切出受控 MCP 写操作设计计划。
+- 不进入本里程碑：Agent 写操作、verify runner、Attractor Registry；这些分别属于后续扩展或后续阶段。
 
 ## 5. 长期阶段线
 
@@ -231,19 +233,18 @@
 
 - 已完成：`plan-012-agent-protocol-foundation` 建立 Agent Protocol 基线、阶段路线和只读 MCP 分阶段策略。
 - 已完成：`plan-013-json-output-and-errors` 实现核心只读命令显式 `--json` 输出、统一 JSON envelope 和结构化 ABH 错误输出。
-- 当前最小闭环：Agent 已经可以通过 CLI 获取可解析的只读 JSON，并能用结构化错误区分业务错误、not found、consistency failure 和系统错误。
-- 剩余核心缺口：尚无 MCP Server，也没有 MCP tool schema 的实际工具入口；Agent 仍需直接执行 CLI，而不是通过 Claude、Cursor 等工具协议调用。
-- 下一步：`plan-014-readonly-mcp-server`，在 JSON/internal object contract 之上封装只读 MCP 工具入口。
-- 阶段 2 判定：进行中。读协议基线已经具备，MCP 工具入口尚未实现。
-- 后置项：Agent 写操作继续后置，必须等只读 MCP 稳定后再切计划。
+- 已完成：`plan-014-readonly-mcp-server` 已封装只读 MCP stdio Server，暴露 plan、audit、memory、route、doctor 和既有 drift report 的只读工具入口。
+- 当前最小闭环：Agent 已经可以通过 CLI 获取可解析的只读 JSON，并具备通过 MCP 工具协议读取 ABH 状态的入口。
+- 阶段 2 判定：完成。阶段 2 的目标是把 ABH 从人类可读 CLI 升级为 Agent 可程序化读取的治理接口；该目标已由 JSON contract、结构化错误和只读 MCP Server 满足。
+- 后置项：Agent 写操作继续后置，不作为阶段 2 完成条件。写工具需要单独设计门禁，避免绕过 plan/verify/audit/doctor。
 
-建议版本：v0.2。
+建议版本：v0.2.0，已作为阶段 2 里程碑。
 
 计划切分：
 
 - `plan-012-agent-protocol-foundation`（已完成）
 - `plan-013-json-output-and-errors`（已完成）
-- `plan-014-readonly-mcp-server`（下一步）
+- `plan-014-readonly-mcp-server`（已完成）
 
 ### 阶段 3：从“记录验证”升级到“执行验证”
 
@@ -356,7 +357,7 @@
 | 长期阶段 | 已完成历史计划 | 已完成内容 | 剩余内容 |
 | --- | --- | --- | --- |
 | 阶段 1：恢复权威基线，稳住内核 | `plan-006-stabilize`, `plan-007-zero-dep-install`, `plan-008-roadmap-sync-and-doctor`, `plan-009-roadmap-phase-alignment`, `plan-010-core-governance-hardening`, `plan-011-stage-1-finalization` | 历史计划迁移、安装门槛降低、`abh doctor`、路线图对齐、demo 清理、schema version、历史 schema 迁移、CI、版本策略 | 已完成；内容级 doctor、发布自动化转入后续质量/发布计划 |
-| 阶段 2：Agent Protocol 基础 | `plan-012-agent-protocol-foundation`, `plan-013-json-output-and-errors` | Agent Protocol 五层基线、阶段路线、核心只读命令 `--json`、统一 JSON envelope、结构化 ABH 错误 | 只读 MCP Server、MCP tool schema 工具入口；Agent 写操作继续后置 |
+| 阶段 2：Agent Protocol 基础 | `plan-012-agent-protocol-foundation`, `plan-013-json-output-and-errors`, `plan-014-readonly-mcp-server` | Agent Protocol 五层基线、阶段路线、核心只读命令 `--json`、统一 JSON envelope、结构化 ABH 错误、只读 MCP stdio Server | 已完成；Agent 写操作作为后续扩展，需要先设计受控写门禁 |
 | 阶段 3：验证执行器 | `plan-002-sprint-2-local-plan-loop` | `verify record` 可记录验证结果 | `verify run`、失败自动证据、plan update、模块拆分 |
 | 阶段 4：Attractor Registry | `plan-001-sprint-1-foundation` | active attractor 文档和模板 | attractor CLI、版本迁移、active 校验 |
 | 阶段 5：真正独立审计 | `plan-003-sprint-3-audit-memory-close`, `plan-007-zero-dep-install`, `plan-008-roadmap-sync-and-doctor` | audit request/record/close 闭环，人工独立审计流程已 dogfood | audit prompt/bundle、独立上下文字段、关闭门禁 |
@@ -365,21 +366,7 @@
 
 ## 7. 下一批推荐计划
 
-本节只列尚未启动的推荐计划。已关闭的 `plan-012-agent-protocol-foundation` 和 `plan-013-json-output-and-errors` 归入第 3 章历史执行线与第 6 章阶段映射，不再作为下一批计划展示。
-
-### plan-014-readonly-mcp-server
-
-范围：
-
-- 封装只读 MCP Server。
-- 暴露 plan、audit、memory、drift、route、doctor 的安全读取工具。
-- 基于 JSON 输出和内部对象模型返回稳定结构。
-- 补充 MCP tool schema 和契约测试，证明 Agent 可通过工具协议读取 ABH 状态。
-
-不做：
-
-- 不提供写操作。
-- 不绕过 ABH 现有状态机和审计门禁。
+本节列下一批推荐计划。已关闭的 `plan-012-agent-protocol-foundation`、`plan-013-json-output-and-errors` 和 `plan-014-readonly-mcp-server` 归入第 3 章历史执行线与第 6 章阶段映射。
 
 ### plan-015-verify-runner
 
