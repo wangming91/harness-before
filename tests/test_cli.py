@@ -741,22 +741,31 @@ class McpServerTests(TestCase):
         list_response = self.call_mcp({"jsonrpc": "2.0", "id": 2, "method": "tools/list"})
         tools = list_response["result"]["tools"]
         tool_names = {tool["name"] for tool in tools}
-        self.assertEqual(
-            tool_names,
-            {
-                "abh_plan_list",
-                "abh_plan_status",
-                "abh_audit_list",
-                "abh_memory_list",
-                "abh_memory_search",
-                "abh_route",
-                "abh_doctor",
-                "abh_drift_list",
-            },
-        )
+        self.assertIn("abh_plan_list", tool_names)
+        self.assertIn("abh_plan_status", tool_names)
+        self.assertIn("abh_close_plan", tool_names)
         for tool in tools:
             self.assertEqual(tool["inputSchema"]["type"], "object")
-            self.assertTrue(tool["annotations"]["readOnlyHint"])
+        readonly = {tool["name"]: tool["annotations"]["readOnlyHint"] for tool in tools}
+        self.assertTrue(readonly["abh_plan_list"])
+        self.assertTrue(readonly["abh_doctor"])
+        self.assertFalse(readonly["abh_plan_create"])
+        self.assertFalse(readonly["abh_verify_record"])
+        self.assertFalse(readonly["abh_close_plan"])
+        write_tool_names = {
+            "abh_plan_create",
+            "abh_plan_transition",
+            "abh_verify_record",
+            "abh_audit_request",
+            "abh_audit_record",
+            "abh_close_plan",
+            "abh_memory_add",
+            "abh_drift_analyze",
+        }
+        self.assertTrue(write_tool_names.issubset(tool_names))
+        for tool in tools:
+            if tool["name"] in write_tool_names:
+                self.assertIn("confirm", tool["inputSchema"]["required"])
 
     def test_mcp_tools_call_returns_structured_content_for_core_reads(self) -> None:
         self.create_ready_plan()
@@ -898,3 +907,205 @@ class McpServerTests(TestCase):
         self.assertEqual(lines[0]["id"], 1)
         self.assertIn("tools", lines[0]["result"])
         self.assertEqual(lines[1]["error"]["code"], -32700)
+
+    def test_mcp_write_tools_require_confirm_and_do_not_write_without_it(self) -> None:
+        response = self.call_mcp(
+            {
+                "jsonrpc": "2.0",
+                "id": 10,
+                "method": "tools/call",
+                "params": {
+                    "name": "abh_plan_create",
+                    "arguments": {
+                        "plan_id": "plan-mcp-no-confirm",
+                        "title": "No Confirm",
+                        "attractor": "docs/architecture/attractors/abh-core-attractor.md",
+                        "baseline": "baseline",
+                    },
+                },
+            }
+        )
+
+        result = response["result"]
+        self.assertTrue(result["isError"])
+        envelope = result["structuredContent"]
+        self.assertFalse(envelope["ok"])
+        self.assertEqual(envelope["errors"][0]["category"], "business_rule")
+        self.assertFalse((self.root / ".abh" / "plans" / "plan-mcp-no-confirm.json").exists())
+
+    def test_mcp_controlled_write_flow_can_create_verify_audit_close_and_write_memory(self) -> None:
+        create_response = self.call_mcp(
+            {
+                "jsonrpc": "2.0",
+                "id": 11,
+                "method": "tools/call",
+                "params": {
+                    "name": "abh_plan_create",
+                    "arguments": {
+                        "confirm": True,
+                        "plan_id": "plan-mcp-write",
+                        "title": "MCP Write Plan",
+                        "attractor": "docs/architecture/attractors/abh-core-attractor.md",
+                        "baseline": "baseline",
+                        "status": "ready",
+                        "goals": ["ship controlled writes"],
+                        "non_goals": ["skip audit"],
+                        "exit_criteria": ["closed through mcp"],
+                        "validation_checklist": ["unit tests pass"],
+                        "closure_evidence": ["tests/test_cli.py"],
+                    },
+                },
+            }
+        )
+        plan = create_response["result"]["structuredContent"]["data"]["plan"]
+        self.assertEqual(plan["id"], "plan-mcp-write")
+        self.assertEqual(plan["status"], "ready")
+
+        verify_response = self.call_mcp(
+            {
+                "jsonrpc": "2.0",
+                "id": 12,
+                "method": "tools/call",
+                "params": {
+                    "name": "abh_verify_record",
+                    "arguments": {
+                        "confirm": True,
+                        "plan_id": "plan-mcp-write",
+                        "command": "python3 -m unittest tests/test_cli.py -v",
+                        "result": "pass",
+                        "artifacts": ["tests/test_cli.py"],
+                    },
+                },
+            }
+        )
+        verification = verify_response["result"]["structuredContent"]["data"]["verification"]
+        self.assertEqual(verification["plan_id"], "plan-mcp-write")
+
+        transition_response = self.call_mcp(
+            {
+                "jsonrpc": "2.0",
+                "id": 13,
+                "method": "tools/call",
+                "params": {
+                    "name": "abh_plan_transition",
+                    "arguments": {"confirm": True, "plan_id": "plan-mcp-write", "to": "running"},
+                },
+            }
+        )
+        self.assertEqual(transition_response["result"]["structuredContent"]["data"]["plan"]["status"], "running")
+
+        audit_request_response = self.call_mcp(
+            {
+                "jsonrpc": "2.0",
+                "id": 14,
+                "method": "tools/call",
+                "params": {
+                    "name": "abh_audit_request",
+                    "arguments": {
+                        "confirm": True,
+                        "plan_id": "plan-mcp-write",
+                        "audit_id": "audit-mcp-write",
+                        "auditor": "independent-auditor",
+                        "scope": "mcp write close gate",
+                        "evidence": ["tests/test_cli.py"],
+                    },
+                },
+            }
+        )
+        self.assertEqual(audit_request_response["result"]["structuredContent"]["data"]["audit"]["id"], "audit-mcp-write")
+
+        audit_record_response = self.call_mcp(
+            {
+                "jsonrpc": "2.0",
+                "id": 15,
+                "method": "tools/call",
+                "params": {
+                    "name": "abh_audit_record",
+                    "arguments": {
+                        "confirm": True,
+                        "audit_id": "audit-mcp-write",
+                        "result": "pass",
+                        "rationale": "mcp write flow verified",
+                    },
+                },
+            }
+        )
+        self.assertEqual(audit_record_response["result"]["structuredContent"]["data"]["audit"]["result"], "pass")
+
+        closing_response = self.call_mcp(
+            {
+                "jsonrpc": "2.0",
+                "id": 16,
+                "method": "tools/call",
+                "params": {
+                    "name": "abh_plan_transition",
+                    "arguments": {"confirm": True, "plan_id": "plan-mcp-write", "to": "closing"},
+                },
+            }
+        )
+        self.assertEqual(closing_response["result"]["structuredContent"]["data"]["plan"]["status"], "closing")
+
+        close_response = self.call_mcp(
+            {
+                "jsonrpc": "2.0",
+                "id": 17,
+                "method": "tools/call",
+                "params": {
+                    "name": "abh_close_plan",
+                    "arguments": {"confirm": True, "plan_id": "plan-mcp-write"},
+                },
+            }
+        )
+        self.assertEqual(close_response["result"]["structuredContent"]["data"]["plan"]["status"], "closed")
+
+        memory_response = self.call_mcp(
+            {
+                "jsonrpc": "2.0",
+                "id": 18,
+                "method": "tools/call",
+                "params": {
+                    "name": "abh_memory_add",
+                    "arguments": {
+                        "confirm": True,
+                        "memory_id": "mem-mcp-write",
+                        "type": "divergent_pattern",
+                        "summary": "controlled mcp write flow",
+                        "context": "mcp write tools created ABH records",
+                        "implication": "write tools preserve ABH gates",
+                        "evidence": ["tests/test_cli.py"],
+                        "related": ["plan-mcp-write"],
+                    },
+                },
+            }
+        )
+        self.assertEqual(memory_response["result"]["structuredContent"]["data"]["memory"]["id"], "mem-mcp-write")
+        self.assertTrue((self.root / ".abh" / "plans" / "plan-mcp-write.json").exists())
+        self.assertTrue((self.root / "docs" / "plans" / "plan-mcp-write.md").exists())
+        self.assertTrue((self.root / ".abh" / "audits" / "audit-mcp-write.json").exists())
+        self.assertTrue((self.root / ".abh" / "memory" / "mem-mcp-write.json").exists())
+
+    def test_mcp_drift_analyze_write_tool_requires_confirm_and_can_write_report(self) -> None:
+        drift_source = self.root / "mcp-drift-source.txt"
+        drift_source.write_text("Skipped tests and added external dependency.\n", encoding="utf-8")
+
+        response = self.call_mcp(
+            {
+                "jsonrpc": "2.0",
+                "id": 19,
+                "method": "tools/call",
+                "params": {
+                    "name": "abh_drift_analyze",
+                    "arguments": {
+                        "confirm": True,
+                        "drift_id": "drift-mcp-write",
+                        "source": str(drift_source),
+                        "evidence": ["mcp-drift-source.txt"],
+                    },
+                },
+            }
+        )
+
+        envelope = response["result"]["structuredContent"]
+        self.assertTrue(envelope["ok"])
+        self.assertEqual(envelope["data"]["drift_report"]["id"], "drift-mcp-write")
+        self.assertTrue((self.root / ".abh" / "drift" / "drift-mcp-write.json").exists())

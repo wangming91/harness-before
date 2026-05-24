@@ -1,0 +1,54 @@
+{
+  "schema_version": "1",
+  "id": "plan-015-controlled-mcp-write-tools",
+  "title": "Controlled MCP Write Tools",
+  "attractor": "docs/architecture/attractors/abh-core-attractor.md",
+  "baseline": "docs/development-roadmap.md",
+  "owner": "platform",
+  "status": "closed",
+  "goals": [
+    "为 MCP Server 增加受控写工具，覆盖现有 CLI 已有的 ABH 写操作",
+    "写工具必须复用 core.py 现有函数，保留 plan 状态机、验证失败阻断、审计关闭门禁和 doctor 一致性规则",
+    "每个 MCP 写工具必须要求显式 confirm=true，并返回结构化 MCP tool result"
+  ],
+  "non_goals": [
+    "不实现 verify run",
+    "不实现 plan update",
+    "不绕过现有 CLI/core 状态规则",
+    "不引入外部运行时依赖、Web UI 或外部数据库"
+  ],
+  "exit_criteria": [
+    "tools/list 同时暴露只读工具和受控写工具，写工具 annotations 标明 readOnlyHint=false",
+    "MCP 写工具覆盖 plan create/transition、verify record、audit request/record、close、memory add、drift analyze",
+    "所有写工具缺少 confirm=true 时返回结构化错误且不写入仓库",
+    "写工具成功路径返回统一 JSON envelope structuredContent，并真实写入 .abh 与 docs",
+    "README、agent-protocol、roadmap、task-board 同步阶段 2 完整收尾，阶段 2 完成后可打 v0.2.0 tag"
+  ],
+  "validation_checklist": [
+    "python3 -m unittest tests/test_cli.py -v",
+    "python3 -m abh doctor",
+    "MCP write smoke: plan create -> verify record -> audit request/record -> close"
+  ],
+  "closure_evidence": [
+    "abh/mcp_server.py",
+    "tests/test_cli.py",
+    "README.md",
+    "docs/architecture/agent-protocol.md",
+    "docs/development-roadmap.md",
+    "docs/task-board.md",
+    "docs/阶段规划.md",
+    "audit-015-controlled-mcp-write-tools"
+  ],
+  "verification_runs": [
+    "ver-e60b0fefea54",
+    "ver-cebd570f794d",
+    "ver-9392befb7f26",
+    "ver-ded421536e35"
+  ],
+  "audit_ids": [
+    "audit-015-controlled-mcp-write-tools"
+  ],
+  "created_at": "2026-05-24T03:43:33.254670+00:00",
+  "updated_at": "2026-05-24T04:35:49.372485+00:00",
+  "doc_path": "/Users/cc/ai/harness-before/docs/plans/plan-015-controlled-mcp-write-tools.md"
+}

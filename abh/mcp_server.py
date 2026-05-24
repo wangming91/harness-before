@@ -8,13 +8,21 @@ from typing import Any, TextIO
 from .cli import abh_error_payload, make_envelope
 from .core import (
     AbhError,
+    add_memory,
+    analyze_drift,
+    close_plan,
+    create_plan,
     doctor,
     list_audits,
     list_memories,
     list_plans,
     load_plan,
+    record_audit,
+    record_verification,
+    request_audit,
     route_question,
     search_memory,
+    transition_plan,
 )
 from .models import DriftReport, SCHEMA_VERSION
 from .storage import drift_dir, read_json
@@ -32,56 +40,165 @@ def text_property(description: str) -> dict[str, str]:
     return {"type": "string", "description": description}
 
 
+def bool_property(description: str) -> dict[str, str]:
+    return {"type": "boolean", "description": description}
+
+
+def array_property(description: str) -> dict[str, Any]:
+    return {"type": "array", "description": description, "items": {"type": "string"}}
+
+
+def object_schema(
+    properties: dict[str, Any],
+    required: list[str] | None = None,
+    *,
+    read_only: bool,
+    description: str,
+) -> dict[str, Any]:
+    return {
+        "description": description,
+        "readOnly": read_only,
+        "inputSchema": {
+            "type": "object",
+            "properties": properties,
+            "required": list(required or []),
+            "additionalProperties": False,
+        },
+    }
+
+
 TOOLS: dict[str, dict[str, Any]] = {
-    "abh_plan_list": {
-        "description": "List ABH plans without modifying repository state.",
-        "inputSchema": {"type": "object", "properties": {}, "additionalProperties": False},
-    },
-    "abh_plan_status": {
-        "description": "Read one ABH plan by id.",
-        "inputSchema": {
-            "type": "object",
-            "properties": {"plan_id": text_property("Plan id, for example plan-014-readonly-mcp-server.")},
-            "required": ["plan_id"],
-            "additionalProperties": False,
+    "abh_plan_list": object_schema({}, read_only=True, description="List ABH plans without modifying repository state."),
+    "abh_plan_status": object_schema(
+        {"plan_id": text_property("Plan id, for example plan-014-readonly-mcp-server.")},
+        ["plan_id"],
+        read_only=True,
+        description="Read one ABH plan by id.",
+    ),
+    "abh_audit_list": object_schema({}, read_only=True, description="List ABH audit records without modifying repository state."),
+    "abh_memory_list": object_schema({}, read_only=True, description="List ABH memory records without modifying repository state."),
+    "abh_memory_search": object_schema(
+        {
+            "type": text_property("Optional memory type."),
+            "query": text_property("Optional case-insensitive search text."),
         },
-    },
-    "abh_audit_list": {
-        "description": "List ABH audit records without modifying repository state.",
-        "inputSchema": {"type": "object", "properties": {}, "additionalProperties": False},
-    },
-    "abh_memory_list": {
-        "description": "List ABH memory records without modifying repository state.",
-        "inputSchema": {"type": "object", "properties": {}, "additionalProperties": False},
-    },
-    "abh_memory_search": {
-        "description": "Search ABH memory records by optional type and query text.",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "type": text_property("Optional memory type."),
-                "query": text_property("Optional case-insensitive search text."),
-            },
-            "additionalProperties": False,
+        read_only=True,
+        description="Search ABH memory records by optional type and query text.",
+    ),
+    "abh_route": object_schema(
+        {"question": text_property("Question to route through ABH governance context.")},
+        ["question"],
+        read_only=True,
+        description="Recommend ABH reading order for a question.",
+    ),
+    "abh_doctor": object_schema({}, read_only=True, description="Check ABH workspace consistency without modifying repository state."),
+    "abh_drift_list": object_schema({}, read_only=True, description="List existing ABH drift reports without creating new drift reports."),
+    "abh_plan_create": object_schema(
+        {
+            "confirm": bool_property("Must be true to permit repository writes."),
+            "plan_id": text_property("Plan id to create."),
+            "title": text_property("Plan title."),
+            "attractor": text_property("Attractor document path."),
+            "baseline": text_property("Baseline document path or baseline label."),
+            "owner": text_property("Optional owner."),
+            "status": text_property("draft or ready."),
+            "goals": array_property("Plan goals."),
+            "non_goals": array_property("Plan non-goals."),
+            "exit_criteria": array_property("Plan exit criteria."),
+            "validation_checklist": array_property("Validation checklist."),
+            "closure_evidence": array_property("Closure evidence paths."),
         },
-    },
-    "abh_route": {
-        "description": "Recommend ABH reading order for a question.",
-        "inputSchema": {
-            "type": "object",
-            "properties": {"question": text_property("Question to route through ABH governance context.")},
-            "required": ["question"],
-            "additionalProperties": False,
+        ["confirm", "plan_id", "title", "attractor", "baseline"],
+        read_only=False,
+        description="Create an ABH plan through existing core rules.",
+    ),
+    "abh_plan_transition": object_schema(
+        {
+            "confirm": bool_property("Must be true to permit repository writes."),
+            "plan_id": text_property("Plan id."),
+            "to": text_property("Target status."),
         },
-    },
-    "abh_doctor": {
-        "description": "Check ABH workspace consistency without modifying repository state.",
-        "inputSchema": {"type": "object", "properties": {}, "additionalProperties": False},
-    },
-    "abh_drift_list": {
-        "description": "List existing ABH drift reports without creating new drift reports.",
-        "inputSchema": {"type": "object", "properties": {}, "additionalProperties": False},
-    },
+        ["confirm", "plan_id", "to"],
+        read_only=False,
+        description="Transition an ABH plan through the existing state machine.",
+    ),
+    "abh_verify_record": object_schema(
+        {
+            "confirm": bool_property("Must be true to permit repository writes."),
+            "plan_id": text_property("Plan id."),
+            "command": text_property("Verification command."),
+            "result": text_property("pass, fail, or partial."),
+            "artifacts": array_property("Verification artifact paths."),
+            "failed_checks": array_property("Failed checks."),
+        },
+        ["confirm", "plan_id", "command", "result"],
+        read_only=False,
+        description="Record verification evidence for a plan.",
+    ),
+    "abh_audit_request": object_schema(
+        {
+            "confirm": bool_property("Must be true to permit repository writes."),
+            "plan_id": text_property("Plan id."),
+            "audit_id": text_property("Audit id."),
+            "auditor": text_property("Auditor label."),
+            "scope": text_property("Audit scope."),
+            "evidence": array_property("Evidence items."),
+        },
+        ["confirm", "plan_id", "audit_id", "auditor", "scope", "evidence"],
+        read_only=False,
+        description="Request an independent audit.",
+    ),
+    "abh_audit_record": object_schema(
+        {
+            "confirm": bool_property("Must be true to permit repository writes."),
+            "audit_id": text_property("Audit id."),
+            "result": text_property("pass, fail, partial, or need_info."),
+            "rationale": text_property("Audit rationale."),
+            "findings": array_property("Findings in Severity|Finding|Evidence|Recommendation form."),
+            "follow_ups": array_property("Follow-up items."),
+        },
+        ["confirm", "audit_id", "result", "rationale"],
+        read_only=False,
+        description="Record an audit verdict.",
+    ),
+    "abh_close_plan": object_schema(
+        {
+            "confirm": bool_property("Must be true to permit repository writes."),
+            "plan_id": text_property("Plan id."),
+        },
+        ["confirm", "plan_id"],
+        read_only=False,
+        description="Close a plan after a passing audit.",
+    ),
+    "abh_memory_add": object_schema(
+        {
+            "confirm": bool_property("Must be true to permit repository writes."),
+            "memory_id": text_property("Memory id."),
+            "type": text_property("Memory type."),
+            "summary": text_property("Memory summary."),
+            "context": text_property("Memory context."),
+            "implication": text_property("Memory implication."),
+            "evidence": array_property("Evidence items."),
+            "related": array_property("Related records."),
+            "deprecation_policy": text_property("Optional deprecation policy."),
+        },
+        ["confirm", "memory_id", "type", "summary", "context", "implication", "evidence"],
+        read_only=False,
+        description="Add a memory record.",
+    ),
+    "abh_drift_analyze": object_schema(
+        {
+            "confirm": bool_property("Must be true to permit repository writes."),
+            "drift_id": text_property("Drift report id."),
+            "source": text_property("Text source path to analyze."),
+            "evidence": array_property("Evidence items."),
+            "memory_id": text_property("Optional memory id to write."),
+            "plan_id": text_property("Optional plan id baseline."),
+        },
+        ["confirm", "drift_id", "source"],
+        read_only=False,
+        description="Analyze drift and write a drift report.",
+    ),
 }
 
 
@@ -114,6 +231,7 @@ def jsonrpc_error(
 def tool_definitions() -> list[dict[str, Any]]:
     tools: list[dict[str, Any]] = []
     for name, definition in TOOLS.items():
+        read_only = bool(definition["readOnly"])
         tools.append(
             {
                 "name": name,
@@ -121,9 +239,9 @@ def tool_definitions() -> list[dict[str, Any]]:
                 "description": definition["description"],
                 "inputSchema": definition["inputSchema"],
                 "annotations": {
-                    "readOnlyHint": True,
-                    "destructiveHint": False,
-                    "idempotentHint": True,
+                    "readOnlyHint": read_only,
+                    "destructiveHint": not read_only,
+                    "idempotentHint": read_only,
                     "openWorldHint": False,
                 },
             }
@@ -136,6 +254,29 @@ def require_string(arguments: dict[str, Any], key: str) -> str:
     if not isinstance(value, str) or not value.strip():
         raise AbhError(f"invalid tool argument: {key} is required")
     return value
+
+
+def optional_string(arguments: dict[str, Any], key: str, default: str | None = None) -> str | None:
+    value = arguments.get(key, default)
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise AbhError(f"invalid tool argument: {key} must be a string")
+    return value
+
+
+def optional_string_list(arguments: dict[str, Any], key: str) -> list[str] | None:
+    value = arguments.get(key)
+    if value is None:
+        return None
+    if not isinstance(value, list) or any(not isinstance(item, str) for item in value):
+        raise AbhError(f"invalid tool argument: {key} must be a list of strings")
+    return list(value)
+
+
+def require_confirm(arguments: dict[str, Any]) -> None:
+    if arguments.get("confirm") is not True:
+        raise AbhError("cannot run write tool without confirm=true")
 
 
 def list_drift_reports() -> list[DriftReport]:
@@ -184,13 +325,102 @@ def call_route(arguments: dict[str, Any]) -> dict[str, Any]:
     return {"route": route_question(question)}
 
 
-def call_doctor(arguments: dict[str, Any]) -> dict[str, Any]:
-    return {"issues": []}
-
-
 def call_drift_list(arguments: dict[str, Any]) -> dict[str, Any]:
     reports = list_drift_reports()
     return {"drift_reports": [report.to_dict() for report in reports], "total": len(reports)}
+
+
+def call_plan_create(arguments: dict[str, Any]) -> dict[str, Any]:
+    require_confirm(arguments)
+    plan = create_plan(
+        plan_id=require_string(arguments, "plan_id"),
+        title=require_string(arguments, "title"),
+        attractor=require_string(arguments, "attractor"),
+        baseline=require_string(arguments, "baseline"),
+        owner=optional_string(arguments, "owner", "platform") or "platform",
+        status=optional_string(arguments, "status", "draft") or "draft",
+        goals=optional_string_list(arguments, "goals"),
+        non_goals=optional_string_list(arguments, "non_goals"),
+        exit_criteria=optional_string_list(arguments, "exit_criteria"),
+        validation_checklist=optional_string_list(arguments, "validation_checklist"),
+        closure_evidence=optional_string_list(arguments, "closure_evidence"),
+    )
+    return {"plan": plan.to_dict()}
+
+
+def call_plan_transition(arguments: dict[str, Any]) -> dict[str, Any]:
+    require_confirm(arguments)
+    plan = transition_plan(require_string(arguments, "plan_id"), require_string(arguments, "to"))
+    return {"plan": plan.to_dict()}
+
+
+def call_verify_record(arguments: dict[str, Any]) -> dict[str, Any]:
+    require_confirm(arguments)
+    run = record_verification(
+        plan_id=require_string(arguments, "plan_id"),
+        command=require_string(arguments, "command"),
+        result=require_string(arguments, "result"),
+        artifacts=optional_string_list(arguments, "artifacts"),
+        failed_checks=optional_string_list(arguments, "failed_checks"),
+    )
+    return {"verification": run.to_dict()}
+
+
+def call_audit_request(arguments: dict[str, Any]) -> dict[str, Any]:
+    require_confirm(arguments)
+    audit = request_audit(
+        plan_id=require_string(arguments, "plan_id"),
+        audit_id=require_string(arguments, "audit_id"),
+        auditor=require_string(arguments, "auditor"),
+        scope=require_string(arguments, "scope"),
+        evidence=optional_string_list(arguments, "evidence"),
+    )
+    return {"audit": audit.to_dict()}
+
+
+def call_audit_record(arguments: dict[str, Any]) -> dict[str, Any]:
+    require_confirm(arguments)
+    audit = record_audit(
+        audit_id=require_string(arguments, "audit_id"),
+        result=require_string(arguments, "result"),
+        rationale=require_string(arguments, "rationale"),
+        findings=optional_string_list(arguments, "findings"),
+        follow_ups=optional_string_list(arguments, "follow_ups"),
+    )
+    return {"audit": audit.to_dict()}
+
+
+def call_close_plan(arguments: dict[str, Any]) -> dict[str, Any]:
+    require_confirm(arguments)
+    plan = close_plan(require_string(arguments, "plan_id"))
+    return {"plan": plan.to_dict()}
+
+
+def call_memory_add(arguments: dict[str, Any]) -> dict[str, Any]:
+    require_confirm(arguments)
+    memory = add_memory(
+        memory_id=require_string(arguments, "memory_id"),
+        memory_type=require_string(arguments, "type"),
+        summary=require_string(arguments, "summary"),
+        context=require_string(arguments, "context"),
+        implication=require_string(arguments, "implication"),
+        evidence=optional_string_list(arguments, "evidence"),
+        related=optional_string_list(arguments, "related"),
+        deprecation_policy=optional_string(arguments, "deprecation_policy"),
+    )
+    return {"memory": memory.to_dict()}
+
+
+def call_drift_analyze(arguments: dict[str, Any]) -> dict[str, Any]:
+    require_confirm(arguments)
+    report = analyze_drift(
+        drift_id=require_string(arguments, "drift_id"),
+        source=require_string(arguments, "source"),
+        evidence=optional_string_list(arguments, "evidence"),
+        memory_id=optional_string(arguments, "memory_id"),
+        plan_id=optional_string(arguments, "plan_id"),
+    )
+    return {"drift_report": report.to_dict()}
 
 
 TOOL_HANDLERS: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
@@ -200,8 +430,15 @@ TOOL_HANDLERS: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
     "abh_memory_list": call_memory_list,
     "abh_memory_search": call_memory_search,
     "abh_route": call_route,
-    "abh_doctor": call_doctor,
     "abh_drift_list": call_drift_list,
+    "abh_plan_create": call_plan_create,
+    "abh_plan_transition": call_plan_transition,
+    "abh_verify_record": call_verify_record,
+    "abh_audit_request": call_audit_request,
+    "abh_audit_record": call_audit_record,
+    "abh_close_plan": call_close_plan,
+    "abh_memory_add": call_memory_add,
+    "abh_drift_analyze": call_drift_analyze,
 }
 
 
@@ -223,7 +460,7 @@ def handle_initialize(request_id: object, params: object) -> dict[str, Any]:
             "protocolVersion": protocol_version,
             "capabilities": {"tools": {"listChanged": False}},
             "serverInfo": {"name": "abh", "version": SCHEMA_VERSION},
-            "instructions": "ABH MCP exposes read-only governance tools. Write operations remain CLI-only.",
+            "instructions": "ABH MCP exposes read-only governance tools and controlled write tools that require confirm=true.",
         },
     )
 
@@ -234,7 +471,7 @@ def handle_tools_call(request_id: object, params: object) -> dict[str, Any]:
     name = params.get("name")
     if not isinstance(name, str):
         return jsonrpc_error(request_id, JSONRPC_INVALID_PARAMS, "tools/call requires a string name", category="validation")
-    if name not in TOOL_HANDLERS:
+    if name not in TOOL_HANDLERS and name != "abh_doctor":
         return jsonrpc_error(request_id, JSONRPC_METHOD_NOT_FOUND, f"Unknown tool: {name}", category="not_found")
     arguments = params.get("arguments", {})
     if not isinstance(arguments, dict):
@@ -257,6 +494,8 @@ def handle_tools_call(request_id: object, params: object) -> dict[str, Any]:
                     ],
                 )
                 return jsonrpc_response(request_id, tool_result(envelope, is_error=True))
+            envelope = make_envelope(ok=True, command=name, data={"issues": []})
+            return jsonrpc_response(request_id, tool_result(envelope, is_error=False))
         data = TOOL_HANDLERS[name](arguments)
         envelope = make_envelope(ok=True, command=name, data=data)
         return jsonrpc_response(request_id, tool_result(envelope, is_error=False))

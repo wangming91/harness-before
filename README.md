@@ -3,9 +3,9 @@
 `Attractor Before Harness` 是一个面向 AI 协作开发的收敛框架与 CLI 工具集。项目核心思想来自"先定义系统要收敛到哪里，再用 harness 持续纠偏"的方法论：先把吸引子、基线、计划、验证、审计和记忆显式化，再让开发过程围绕这些对象运行。
 
 ## 项目来源
+[Attractor Before Harness: AI 大规模开发的方法论](https://mp.weixin.qq.com/s/TwMkUDLNo2-bIrXrfvPqIw)
 
 这个项目源于对 AI 大规模开发协作方式的整理与工程化尝试，重点解决三个问题：
-
 1. AI 生成结果不稳定，容易偏离长期目标。
 2. 单次任务完成不等于系统轨迹正确。
 3. 缺少可审计、可回放、可沉淀的开发过程记录。
@@ -111,7 +111,7 @@ python3 -m unittest tests/test_cli.py
 
 项目版本以 `pyproject.toml` 的 `[project].version` 和 `abh.__version__` 为准，两者必须保持一致。README 中声明的新 CLI 能力、安装方式或运行要求发生变化时，必须同步检查版本是否需要提升，并在对应 plan 的 closure evidence 中说明。
 
-当前版本为 `0.2.0`，对应阶段 2 Agent Protocol Foundation：项目已经具备显式 JSON CLI contract、结构化错误输出和只读 MCP Server。MCP 写操作仍属于后续扩展，需要单独设计门禁后再开放。
+当前版本为 `0.2.0`，对应阶段 2 Agent Protocol Foundation：项目已经具备显式 JSON CLI contract、结构化错误输出、只读 MCP Server 和受控 MCP 写工具。受控写工具必须显式传入 `confirm=true`，并复用现有 core 规则，不能绕过 plan 状态机、验证记录、审计关闭门禁或 doctor 一致性检查。
 
 ## CI 与关闭门禁
 
@@ -310,15 +310,15 @@ abh doctor --json
 
 JSON envelope 包含 `schema_version`、`ok`、`command`、`data`、`errors` 和 `warnings`。当 ABH 业务错误发生时，`--json` 模式会把错误写入 `errors`，并保留现有返回码语义。
 
-### 14. 只读 MCP Server
+### 14. MCP Server
 
-ABH 提供一个零外部运行时依赖的只读 MCP stdio Server，供支持 MCP 的 Agent 通过工具协议读取治理状态：
+ABH 提供一个零外部运行时依赖的 MCP stdio Server，供支持 MCP 的 Agent 通过工具协议读取治理状态，并在显式确认后执行受控写操作：
 
 ```bash
 python3 -m abh.mcp_server
 ```
 
-当前 MCP 工具均为只读：
+当前只读 MCP 工具：
 
 - `abh_plan_list`
 - `abh_plan_status`
@@ -329,7 +329,18 @@ python3 -m abh.mcp_server
 - `abh_doctor`
 - `abh_drift_list`
 
-这些工具复用现有 `.abh/` JSON 和 core/model 行为，返回包含 `structuredContent` 的 MCP tool result。MCP 写操作暂不开放；创建计划、记录验证、记录审计、关闭计划和写 memory 仍必须通过 CLI 与现有 ABH 门禁完成。
+当前受控写 MCP 工具：
+
+- `abh_plan_create`
+- `abh_plan_transition`
+- `abh_verify_record`
+- `abh_audit_request`
+- `abh_audit_record`
+- `abh_close_plan`
+- `abh_memory_add`
+- `abh_drift_analyze`
+
+所有 MCP 工具都复用现有 `.abh/` JSON 和 core/model 行为，返回包含 `structuredContent` 的 MCP tool result。写工具必须传入 `confirm=true`，否则返回结构化业务错误并且不写入仓库。
 
 ## 项目结构
 
@@ -354,7 +365,6 @@ python3 -m abh.mcp_server
 当前仓库已经覆盖计划、验证、审计、关闭、记忆、路由和基础漂移分析。后续计划：
 
 - 推进阶段 3：实现 `abh verify run <plan>`，把验证从人工记录升级为本地执行器
-- 在正式开放 MCP 写操作前，先设计受控写工具门禁
 - 提升漂移分析精度：从关键词匹配升级到更高质量的证据提取
 - 增加 `abh report`，展示计划关闭率、审计驳回率和重复漂移情况
 - 支持 Git hook 集成，在提交前自动验证状态一致性

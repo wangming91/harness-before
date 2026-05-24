@@ -173,22 +173,49 @@
 
 状态：已完成，对应 `plan-013-json-output-and-errors`。
 
+### v0.12：只读 MCP Server
+
+周期：Sprint 12
+
+目标：
+
+- 提供 `python3 -m abh.mcp_server` stdio JSON-RPC 入口。
+- 暴露 plan、audit、memory、route、doctor 和 drift report 的只读 MCP 工具。
+- 返回 MCP tool result，包含 text content 和 `structuredContent`。
+- 对未知工具、非法 JSON、缺失对象和 doctor issues 返回结构化错误。
+
+状态：已完成，对应 `plan-014-readonly-mcp-server`。
+
+### v0.13：受控 MCP 写工具
+
+周期：Sprint 12
+
+目标：
+
+- 在只读 MCP 稳定后开放受控写工具。
+- 覆盖 plan create/transition、verify record、audit request/record、close、memory add 和 drift analyze。
+- 每个写工具必须显式要求 `confirm=true`，缺失确认时返回结构化业务错误且不写入仓库。
+- 写工具必须复用 `core.py` 现有函数，保留状态机、验证、审计关闭和 doctor 规则。
+
+状态：已完成，对应 `plan-015-controlled-mcp-write-tools`。
+
 ## 4. 当前执行焦点
 
 当前处于 Sprint 12 后半段。
 
-`plan-014-readonly-mcp-server` 已关闭。核心只读命令已经具备显式 JSON 输出和结构化错误格式，并已封装为只读 MCP stdio Server；当前焦点是阶段 2 后半：在只读工具稳定的前提下，评估是否切出受控 MCP 写操作计划。
+`plan-015-controlled-mcp-write-tools` 已关闭。阶段 2 Agent Protocol Foundation 已完整完成：核心只读命令具备显式 JSON 输出和结构化错误格式，MCP stdio Server 同时提供只读工具和受控写工具，写工具必须显式 `confirm=true` 并复用现有 ABH 门禁。
 
-当前执行计划：暂无 running plan。
+当前执行计划：暂无 running plan。下一推荐计划为阶段 3 的 `plan-016-verify-runner`。
 
 当前阶段状态：
 
 - 已完成：`plan-012-agent-protocol-foundation`、`plan-013-json-output-and-errors`。
 - 已完成：`plan-014-readonly-mcp-server`。
-- 阶段 2 判定：完成。ABH 已具备 Agent Protocol 基线、机器可解析 JSON contract、结构化错误和只读 MCP 工具入口。
+- 已完成：`plan-015-controlled-mcp-write-tools`。
+- 阶段 2 判定：完成。JSON contract、结构化错误、只读 MCP 和受控 MCP 写工具均已通过 verification 与独立审计。
 - 当前里程碑：v0.2.0 Agent Protocol Foundation。
-- 下一步：进入阶段 3 验证执行器，或在正式开放写能力前单独切出受控 MCP 写操作设计计划。
-- 不进入本里程碑：Agent 写操作、verify runner、Attractor Registry；这些分别属于后续扩展或后续阶段。
+- 下一步：打 `v0.2.0` tag 后进入阶段 3 验证执行器。
+- 不进入本里程碑：verify runner、Attractor Registry、Web UI、外部数据库。
 
 ## 5. 长期阶段线
 
@@ -225,7 +252,7 @@
 - 定义稳定的 Agent tool schema，覆盖 plan、verify、audit、memory、route、drift 和 doctor 的输入、输出和错误格式。
 - 统一 CLI 返回码和结构化错误，保证 Agent 能区分成功、校验失败、业务阻断和系统错误。
 - 新增只读 MCP Server 第一版，让 Claude、Cursor 等 Agent 能读取计划、审计、记忆、漂移和当前路线。
-- MCP 写操作后置，只在读协议和工具 schema 稳定后开放，并继续遵守现有 ABH 门禁。
+- MCP 写操作只在读协议和工具 schema 稳定后开放，并继续遵守现有 ABH 门禁。
 
 协议基线：`docs/architecture/agent-protocol.md`。
 
@@ -234,17 +261,19 @@
 - 已完成：`plan-012-agent-protocol-foundation` 建立 Agent Protocol 基线、阶段路线和只读 MCP 分阶段策略。
 - 已完成：`plan-013-json-output-and-errors` 实现核心只读命令显式 `--json` 输出、统一 JSON envelope 和结构化 ABH 错误输出。
 - 已完成：`plan-014-readonly-mcp-server` 已封装只读 MCP stdio Server，暴露 plan、audit、memory、route、doctor 和既有 drift report 的只读工具入口。
-- 当前最小闭环：Agent 已经可以通过 CLI 获取可解析的只读 JSON，并具备通过 MCP 工具协议读取 ABH 状态的入口。
-- 阶段 2 判定：完成。阶段 2 的目标是把 ABH 从人类可读 CLI 升级为 Agent 可程序化读取的治理接口；该目标已由 JSON contract、结构化错误和只读 MCP Server 满足。
-- 后置项：Agent 写操作继续后置，不作为阶段 2 完成条件。写工具需要单独设计门禁，避免绕过 plan/verify/audit/doctor。
+- 已完成：`plan-015-controlled-mcp-write-tools` 实现受控 MCP 写工具，并通过验证与独立审计。
+- 当前最小闭环：Agent 已经可以通过 CLI 获取可解析 JSON，通过 MCP 读取 ABH 状态，并在显式确认后调用受控写工具。
+- 阶段 2 判定：完成。
+- 后置项：verify runner、Attractor Registry、报告和发布自动化进入后续阶段。
 
-建议版本：v0.2.0，已作为阶段 2 里程碑。
+建议版本：v0.2.0，作为阶段 2 里程碑。
 
 计划切分：
 
 - `plan-012-agent-protocol-foundation`（已完成）
 - `plan-013-json-output-and-errors`（已完成）
 - `plan-014-readonly-mcp-server`（已完成）
+- `plan-015-controlled-mcp-write-tools`（已完成）
 
 ### 阶段 3：从“记录验证”升级到“执行验证”
 
@@ -264,9 +293,9 @@
 
 建议后续计划：
 
-- `plan-015-verify-runner`
-- `plan-016-plan-update`
-- `plan-017-core-module-split`
+- `plan-016-verify-runner`
+- `plan-017-plan-update`
+- `plan-018-core-module-split`
 
 ### 阶段 4：补齐 Attractor Registry
 
@@ -285,8 +314,8 @@
 
 建议后续计划：
 
-- `plan-018-attractor-registry`
-- `plan-019-attractor-aware-route-drift`
+- `plan-019-attractor-registry`
+- `plan-020-attractor-aware-route-drift`
 
 ### 阶段 5：真正独立审计
 
@@ -306,8 +335,8 @@
 
 建议后续计划：
 
-- `plan-020-audit-prompt-bundle`
-- `plan-021-independent-audit-gate`
+- `plan-021-audit-prompt-bundle`
+- `plan-022-independent-audit-gate`
 
 ### 阶段 6：漂移与记忆质量提升
 
@@ -326,9 +355,9 @@
 
 建议后续计划：
 
-- `plan-022-drift-quality`
-- `plan-023-memory-index`
-- `plan-024-reporting`
+- `plan-023-drift-quality`
+- `plan-024-memory-index`
+- `plan-025-reporting`
 
 ### 阶段 7：团队可用与生态集成
 
@@ -348,16 +377,16 @@
 
 建议后续计划：
 
-- `plan-025-init-and-ci-templates`
-- `plan-026-multi-repo-sharing`
-- `plan-027-pypi-release`
+- `plan-026-init-and-ci-templates`
+- `plan-027-multi-repo-sharing`
+- `plan-028-pypi-release`
 
 ## 6. 历史执行线与长期阶段映射
 
 | 长期阶段 | 已完成历史计划 | 已完成内容 | 剩余内容 |
 | --- | --- | --- | --- |
 | 阶段 1：恢复权威基线，稳住内核 | `plan-006-stabilize`, `plan-007-zero-dep-install`, `plan-008-roadmap-sync-and-doctor`, `plan-009-roadmap-phase-alignment`, `plan-010-core-governance-hardening`, `plan-011-stage-1-finalization` | 历史计划迁移、安装门槛降低、`abh doctor`、路线图对齐、demo 清理、schema version、历史 schema 迁移、CI、版本策略 | 已完成；内容级 doctor、发布自动化转入后续质量/发布计划 |
-| 阶段 2：Agent Protocol 基础 | `plan-012-agent-protocol-foundation`, `plan-013-json-output-and-errors`, `plan-014-readonly-mcp-server` | Agent Protocol 五层基线、阶段路线、核心只读命令 `--json`、统一 JSON envelope、结构化 ABH 错误、只读 MCP stdio Server | 已完成；Agent 写操作作为后续扩展，需要先设计受控写门禁 |
+| 阶段 2：Agent Protocol 基础 | `plan-012-agent-protocol-foundation`, `plan-013-json-output-and-errors`, `plan-014-readonly-mcp-server`, `plan-015-controlled-mcp-write-tools` | Agent Protocol 五层基线、阶段路线、核心只读命令 `--json`、统一 JSON envelope、结构化 ABH 错误、只读 MCP stdio Server、受控 MCP 写工具 | 已完成；verify runner 和 Attractor Registry 转入后续阶段 |
 | 阶段 3：验证执行器 | `plan-002-sprint-2-local-plan-loop` | `verify record` 可记录验证结果 | `verify run`、失败自动证据、plan update、模块拆分 |
 | 阶段 4：Attractor Registry | `plan-001-sprint-1-foundation` | active attractor 文档和模板 | attractor CLI、版本迁移、active 校验 |
 | 阶段 5：真正独立审计 | `plan-003-sprint-3-audit-memory-close`, `plan-007-zero-dep-install`, `plan-008-roadmap-sync-and-doctor` | audit request/record/close 闭环，人工独立审计流程已 dogfood | audit prompt/bundle、独立上下文字段、关闭门禁 |
@@ -366,9 +395,9 @@
 
 ## 7. 下一批推荐计划
 
-本节列下一批推荐计划。已关闭的 `plan-012-agent-protocol-foundation`、`plan-013-json-output-and-errors` 和 `plan-014-readonly-mcp-server` 归入第 3 章历史执行线与第 6 章阶段映射。
+本节列下一批推荐计划。已关闭的 `plan-012-agent-protocol-foundation`、`plan-013-json-output-and-errors`、`plan-014-readonly-mcp-server` 和 `plan-015-controlled-mcp-write-tools` 归入第 3 章历史执行线与第 6 章阶段映射。
 
-### plan-015-verify-runner
+### plan-016-verify-runner
 
 范围：
 
@@ -382,7 +411,7 @@
 - 不实现 CI 服务端。
 - 不改变 audit 关闭规则。
 
-### plan-016-plan-update
+### plan-017-plan-update
 
 范围：
 

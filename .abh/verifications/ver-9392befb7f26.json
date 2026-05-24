@@ -1,0 +1,13 @@
+{
+  "schema_version": "1",
+  "id": "ver-9392befb7f26",
+  "plan_id": "plan-015-controlled-mcp-write-tools",
+  "command": "python3 -m unittest tests.test_cli.McpServerTests.test_mcp_controlled_write_flow_can_create_verify_audit_close_and_write_memory -v",
+  "result": "pass",
+  "artifacts": [
+    "tests/test_cli.py",
+    "abh/mcp_server.py"
+  ],
+  "failed_checks": [],
+  "created_at": "2026-05-24T04:11:16.010233+00:00"
+}

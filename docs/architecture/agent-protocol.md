@@ -8,9 +8,9 @@ The protocol does not replace the CLI. The CLI remains the execution substrate; 
 
 ## Current Gap
 
-ABH currently has a parameterized CLI for plans, verifications, audits, memory, routing, drift, close, and doctor. Its outputs are primarily natural text produced with `print()`.
+ABH has a parameterized CLI for plans, verifications, audits, memory, routing, drift, close, and doctor. It now exposes explicit JSON output for core read commands, structured ABH errors, and an MCP stdio server.
 
-That means an agent can run commands, but cannot reliably parse results, distinguish business blocking from system errors, or discover stable tool schemas.
+Before Stage 2, an agent could run commands but could not reliably parse results, distinguish business blocking from system errors, or discover stable tool schemas. Stage 2 closes that gap by making the CLI and MCP contracts machine-readable while keeping repository files as the source of truth.
 
 ## Principles
 
@@ -112,7 +112,7 @@ Each tool must define:
 
 ### Layer 4: Read-only MCP Server
 
-The first MCP Server should be read-only.
+The first MCP Server was delivered as read-only before any write tools were opened.
 
 Allowed tools:
 
@@ -131,21 +131,22 @@ Current entrypoint:
 python3 -m abh.mcp_server
 ```
 
-The server uses stdio JSON-RPC messages and returns MCP tool results with both text content and `structuredContent`. All current MCP tools are read-only. `abh_drift_list` lists existing drift reports; drift analysis remains a CLI write path because it creates reports and optional memory.
-
-Deferred tools:
-
-- create plan
-- transition plan
-- record verification
-- request or record audit
-- close plan
-- add memory
-- analyze and write drift reports
+The server uses stdio JSON-RPC messages and returns MCP tool results with both text content and `structuredContent`. `abh_drift_list` lists existing drift reports without creating new ones.
 
 ### Layer 5: Controlled Write MCP Tools
 
-Write tools may be added only after JSON output and read-only MCP are stable.
+Write tools were added only after JSON output and read-only MCP were stable.
+
+Allowed controlled write tools:
+
+- `abh_plan_create`
+- `abh_plan_transition`
+- `abh_verify_record`
+- `abh_audit_request`
+- `abh_audit_record`
+- `abh_close_plan`
+- `abh_memory_add`
+- `abh_drift_analyze`
 
 Write tools must:
 
@@ -153,6 +154,7 @@ Write tools must:
 - preserve state transition rules
 - preserve audit-before-close
 - preserve doctor and schema expectations
+- require explicit `confirm=true`
 - return structured verification evidence
 - be covered by CLI and MCP contract tests
 
@@ -161,10 +163,11 @@ Write tools must:
 - `plan-012-agent-protocol-foundation`: completed; defined this protocol baseline and aligned roadmap/task-board.
 - `plan-013-json-output-and-errors`: completed; implemented JSON output and structured errors for read commands.
 - `plan-014-readonly-mcp-server`: completed; exposes read-only MCP tools over the JSON/internal object contract.
+- `plan-015-controlled-mcp-write-tools`: completed; exposes controlled MCP write tools with explicit confirmation and existing ABH gates.
 
 ## Milestone Status
 
-Stage 2 / Agent Protocol Foundation is complete as of v0.2.0. ABH now has explicit JSON CLI contracts, structured errors, and a read-only MCP Server. Controlled write MCP tools remain a later extension and require a separate gate design before implementation.
+Stage 2 / Agent Protocol Foundation is complete as of `plan-015-controlled-mcp-write-tools` closure. ABH has explicit JSON CLI contracts, structured errors, read-only MCP tools, and controlled MCP write tools guarded by explicit confirmation and existing ABH gates.
 
 ## Non-goals
 

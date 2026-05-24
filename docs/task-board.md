@@ -159,3 +159,8 @@ Sprint 12：阶段 2 Agent Protocol Foundation（已完成，v0.2.0）
 | S12-012 | 补充 MCP contract 测试 | Done | `tests/test_cli.py` |
 | S12-013 | 同步 MCP 使用说明和路线文档 | Done | `README.md`, `docs/architecture/agent-protocol.md`, `docs/development-roadmap.md` |
 | S12-014 | plan-014 验证与独立审计 | Done | `docs/audits/audit-014-readonly-mcp-server.md` |
+| S12-015 | 启动受控 MCP 写工具计划 | Done | `docs/plans/plan-015-controlled-mcp-write-tools.md` |
+| S12-016 | 实现受控 MCP 写工具 | Done | `abh/mcp_server.py` |
+| S12-017 | 补充 MCP 写工具 contract 测试 | Done | `tests/test_cli.py` |
+| S12-018 | 同步阶段 2 收尾文档 | Done | `README.md`, `docs/architecture/agent-protocol.md`, `docs/development-roadmap.md`, `docs/task-board.md`, `docs/阶段规划.md` |
+| S12-019 | plan-015 验证与独立审计 | Done | `docs/audits/audit-015-controlled-mcp-write-tools.md` |
