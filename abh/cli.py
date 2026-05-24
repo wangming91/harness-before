@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
+from typing import Any
 
 from .core import (
     AbhError,
@@ -22,6 +24,69 @@ from .core import (
     transition_plan,
     validate_identifier,
 )
+from .models import SCHEMA_VERSION
+
+
+def add_json_argument(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--json", action="store_true", help="emit machine-readable JSON")
+
+
+def command_name(args: argparse.Namespace) -> str:
+    parts = [str(args.command)]
+    for attr in ("plan_command", "verify_command", "audit_command", "memory_command", "drift_command"):
+        value = getattr(args, attr, None)
+        if value:
+            parts.append(str(value))
+    return " ".join(parts)
+
+
+def make_envelope(
+    *,
+    ok: bool,
+    command: str,
+    data: dict[str, Any] | None = None,
+    errors: list[dict[str, Any]] | None = None,
+    warnings: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "ok": ok,
+        "command": command,
+        "data": data or {},
+        "errors": errors or [],
+        "warnings": warnings or [],
+    }
+
+
+def print_json_envelope(
+    *,
+    ok: bool,
+    command: str,
+    data: dict[str, Any] | None = None,
+    errors: list[dict[str, Any]] | None = None,
+    warnings: list[dict[str, Any]] | None = None,
+) -> None:
+    print(json.dumps(make_envelope(ok=ok, command=command, data=data, errors=errors, warnings=warnings), ensure_ascii=False))
+
+
+def categorize_abh_error(message: str) -> str:
+    if "not found" in message:
+        return "not_found"
+    if message.startswith("invalid ") or "missing:" in message or "required" in message:
+        return "validation"
+    if message.startswith("cannot ") or "transition" in message:
+        return "business_rule"
+    return "system"
+
+
+def abh_error_payload(exc: AbhError) -> dict[str, Any]:
+    message = str(exc)
+    return {
+        "code": "abh_error",
+        "message": message,
+        "category": categorize_abh_error(message),
+        "details": {},
+    }
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -47,9 +112,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     status = plan_sub.add_parser("status", help="show plan status")
     status.add_argument("plan_id")
+    add_json_argument(status)
     status.set_defaults(handler=handle_plan_status)
 
     plan_list = plan_sub.add_parser("list", help="list all plans")
+    add_json_argument(plan_list)
     plan_list.set_defaults(handler=handle_plan_list)
 
     transition = plan_sub.add_parser("transition", help="move plan to another status")
@@ -88,6 +155,7 @@ def build_parser() -> argparse.ArgumentParser:
     audit_record.set_defaults(handler=handle_audit_record)
 
     audit_list = audit_sub.add_parser("list", help="list all audits")
+    add_json_argument(audit_list)
     audit_list.set_defaults(handler=handle_audit_list)
 
     close = subparsers.add_parser("close", help="close a plan after passing audit")
@@ -95,6 +163,7 @@ def build_parser() -> argparse.ArgumentParser:
     close.set_defaults(handler=handle_close)
 
     doctor_parser = subparsers.add_parser("doctor", help="check workspace consistency")
+    add_json_argument(doctor_parser)
     doctor_parser.set_defaults(handler=handle_doctor)
 
     memory_parser = subparsers.add_parser("memory", help="manage externalized memory")
@@ -114,13 +183,16 @@ def build_parser() -> argparse.ArgumentParser:
     memory_search = memory_sub.add_parser("search", help="search memory records")
     memory_search.add_argument("--type", choices=["false_assumption", "rejected_path", "divergent_pattern", "overturned_completion"])
     memory_search.add_argument("--query")
+    add_json_argument(memory_search)
     memory_search.set_defaults(handler=handle_memory_search)
 
     memory_list = memory_sub.add_parser("list", help="list all memory records")
+    add_json_argument(memory_list)
     memory_list.set_defaults(handler=handle_memory_list)
 
     route = subparsers.add_parser("route", help="recommend reading order for a question")
     route.add_argument("--question", required=True)
+    add_json_argument(route)
     route.set_defaults(handler=handle_route)
 
     drift_parser = subparsers.add_parser("drift", help="analyze drift")
@@ -132,6 +204,7 @@ def build_parser() -> argparse.ArgumentParser:
     drift_analyze.add_argument("--evidence", action="append", default=[])
     drift_analyze.add_argument("--memory-id")
     drift_analyze.add_argument("--plan")
+    add_json_argument(drift_analyze)
     drift_analyze.set_defaults(handler=handle_drift_analyze)
 
     return parser
@@ -160,6 +233,9 @@ def handle_plan_status(args: argparse.Namespace) -> int:
 
     validate_identifier(args.plan_id, "plan id")
     plan = load_plan(args.plan_id)
+    if args.json:
+        print_json_envelope(ok=True, command=command_name(args), data={"plan": plan.to_dict()})
+        return 0
     print(plan_status_line(plan))
     return 0
 
@@ -172,6 +248,13 @@ def handle_plan_transition(args: argparse.Namespace) -> int:
 
 def handle_plan_list(args: argparse.Namespace) -> int:
     plans = list_plans()
+    if args.json:
+        print_json_envelope(
+            ok=True,
+            command=command_name(args),
+            data={"plans": [plan.to_dict() for plan in plans], "total": len(plans)},
+        )
+        return 0
     for plan in plans:
         runs = len(plan.verification_runs)
         audits = len(plan.audit_ids)
@@ -218,6 +301,13 @@ def handle_audit_record(args: argparse.Namespace) -> int:
 
 def handle_audit_list(args: argparse.Namespace) -> int:
     audits = list_audits()
+    if args.json:
+        print_json_envelope(
+            ok=True,
+            command=command_name(args),
+            data={"audits": [audit.to_dict() for audit in audits], "total": len(audits)},
+        )
+        return 0
     for audit in audits:
         status_info = f" [{audit.status}]" if audit.status == "complete" else ""
         result_info = f" result={audit.result}" if audit.status == "complete" else ""
@@ -234,6 +324,24 @@ def handle_close(args: argparse.Namespace) -> int:
 
 def handle_doctor(args: argparse.Namespace) -> int:
     issues = doctor()
+    if args.json:
+        if not issues:
+            print_json_envelope(ok=True, command=command_name(args), data={"issues": []})
+            return 0
+        print_json_envelope(
+            ok=False,
+            command=command_name(args),
+            data={"issues": issues},
+            errors=[
+                {
+                    "code": "doctor_issues",
+                    "message": "doctor found consistency issues",
+                    "category": "consistency",
+                    "details": {"issues": issues},
+                }
+            ],
+        )
+        return 1
     if not issues:
         print("doctor: ok")
         return 0
@@ -260,6 +368,13 @@ def handle_memory_add(args: argparse.Namespace) -> int:
 
 def handle_memory_search(args: argparse.Namespace) -> int:
     results = search_memory(memory_type=args.type, query=args.query)
+    if args.json:
+        print_json_envelope(
+            ok=True,
+            command=command_name(args),
+            data={"memories": [memory.to_dict() for memory in results], "total": len(results)},
+        )
+        return 0
     for memory in results:
         print(f"{memory.id} [{memory.memory_type}] {memory.summary}")
     return 0
@@ -267,6 +382,13 @@ def handle_memory_search(args: argparse.Namespace) -> int:
 
 def handle_memory_list(args: argparse.Namespace) -> int:
     memories = list_memories()
+    if args.json:
+        print_json_envelope(
+            ok=True,
+            command=command_name(args),
+            data={"memories": [memory.to_dict() for memory in memories], "total": len(memories)},
+        )
+        return 0
     for mem in memories:
         evidence_count = len(mem.evidence)
         print(f"{mem.id}  [{mem.memory_type}]  {mem.summary}  (evidence: {evidence_count})")
@@ -276,6 +398,9 @@ def handle_memory_list(args: argparse.Namespace) -> int:
 
 def handle_route(args: argparse.Namespace) -> int:
     result = route_question(args.question)
+    if args.json:
+        print_json_envelope(ok=True, command=command_name(args), data={"route": result})
+        return 0
     print(f"Route: {result['route']}")
     print("Reading order:")
     for item in result["reading_order"]:
@@ -292,6 +417,9 @@ def handle_drift_analyze(args: argparse.Namespace) -> int:
         memory_id=args.memory_id,
         plan_id=args.plan,
     )
+    if args.json:
+        print_json_envelope(ok=True, command=command_name(args), data={"drift_report": report.to_dict()})
+        return 0
     print(f"drift report {report.id}")
     for finding in report.findings:
         print(f"- {finding.drift_type}: {finding.evidence}")
@@ -308,6 +436,9 @@ def main(argv: list[str] | None = None) -> int:
             return 1
         return handler(args)
     except AbhError as exc:
+        if "args" in locals() and getattr(args, "json", False):
+            print_json_envelope(ok=False, command=command_name(args), errors=[abh_error_payload(exc)])
+            return 2
         print(f"error: {exc}", file=sys.stderr)
         return 2
     except SystemExit as exc:

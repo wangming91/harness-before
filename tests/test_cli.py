@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+import json
 import tempfile
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
@@ -369,6 +370,43 @@ class CliTests(TestCase):
         self.assertIn("plan-list-b  [draft]  Plan B for list test", out)
         self.assertIn("total: 2 plan(s)", out)
 
+    def test_plan_list_json_returns_machine_readable_envelope(self) -> None:
+        self.run_cli(
+            "plan", "create",
+            "--id", "plan-json-a",
+            "--title", "Plan JSON A",
+            "--attractor", "docs/architecture/attractors/abh-core-attractor.md",
+            "--baseline", "baseline",
+        )
+
+        code, out, err = self.run_cli("plan", "list", "--json")
+
+        self.assertEqual(code, 0, err)
+        self.assertEqual(err, "")
+        payload = json.loads(out)
+        self.assertEqual(payload["schema_version"], "1")
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["command"], "plan list")
+        self.assertEqual(payload["errors"], [])
+        self.assertEqual(payload["warnings"], [])
+        self.assertEqual(payload["data"]["total"], 1)
+        self.assertEqual(payload["data"]["plans"][0]["id"], "plan-json-a")
+        self.assertEqual(payload["data"]["plans"][0]["status"], "draft")
+
+    def test_abh_error_json_returns_structured_error(self) -> None:
+        code, out, err = self.run_cli("plan", "status", "missing-plan", "--json")
+
+        self.assertEqual(code, 2)
+        self.assertEqual(err, "")
+        payload = json.loads(out)
+        self.assertEqual(payload["schema_version"], "1")
+        self.assertFalse(payload["ok"])
+        self.assertEqual(payload["command"], "plan status")
+        self.assertEqual(payload["data"], {})
+        self.assertEqual(payload["errors"][0]["code"], "abh_error")
+        self.assertEqual(payload["errors"][0]["category"], "not_found")
+        self.assertEqual(payload["errors"][0]["message"], "plan not found: missing-plan")
+
     def test_memory_list_returns_all_memories(self) -> None:
         self.run_cli(
             "memory", "add",
@@ -475,6 +513,68 @@ class CliTests(TestCase):
         self.assertEqual(code, 1)
         self.assertEqual(err, "")
         self.assertIn("missing schema_version for plan plan-doctor-schema", out)
+
+    def test_doctor_json_reports_consistency_issues(self) -> None:
+        self.run_cli(
+            "plan", "create",
+            "--id", "plan-doctor-json",
+            "--title", "Doctor JSON",
+            "--attractor", "docs/architecture/attractors/abh-core-attractor.md",
+            "--baseline", "baseline",
+        )
+        (self.root / "docs" / "plans" / "plan-doctor-json.md").unlink()
+
+        code, out, err = self.run_cli("doctor", "--json")
+
+        self.assertEqual(code, 1)
+        self.assertEqual(err, "")
+        payload = json.loads(out)
+        self.assertFalse(payload["ok"])
+        self.assertEqual(payload["command"], "doctor")
+        self.assertEqual(payload["data"]["issues"], ["missing markdown for plan plan-doctor-json"])
+        self.assertEqual(payload["errors"][0]["category"], "consistency")
+        self.assertEqual(payload["errors"][0]["code"], "doctor_issues")
+
+    def test_core_read_commands_support_json_output(self) -> None:
+        self.create_ready_plan("plan-json-contract")
+        self.run_cli(
+            "audit", "request",
+            "plan-json-contract",
+            "--id", "audit-json-contract",
+            "--auditor", "reviewer",
+            "--scope", "json contract",
+            "--evidence", "tests/test_cli.py",
+        )
+        self.run_cli(
+            "memory", "add",
+            "--id", "mem-json-contract",
+            "--type", "false_assumption",
+            "--summary", "json contract memory",
+            "--context", "testing json",
+            "--implication", "agents can parse memory",
+            "--evidence", "tests/test_cli.py",
+        )
+        drift_source = self.root / "json-drift.txt"
+        drift_source.write_text("Skipped tests and added external dependency.\n", encoding="utf-8")
+
+        checks = [
+            (("plan", "status", "plan-json-contract", "--json"), "plan"),
+            (("audit", "list", "--json"), "audits"),
+            (("memory", "list", "--json"), "memories"),
+            (("memory", "search", "--query", "json", "--json"), "memories"),
+            (("route", "--question", "Can we close this plan?", "--json"), "route"),
+            (("drift", "analyze", "--id", "drift-json-contract", "--source", str(drift_source), "--json"), "drift_report"),
+        ]
+
+        for args, data_key in checks:
+            with self.subTest(args=args):
+                code, out, err = self.run_cli(*args)
+                self.assertEqual(code, 0, err)
+                self.assertEqual(err, "")
+                payload = json.loads(out)
+                self.assertTrue(payload["ok"])
+                self.assertEqual(payload["errors"], [])
+                self.assertIn(data_key, payload["data"])
 
     def test_model_serialization_includes_schema_version(self) -> None:
         records = [
