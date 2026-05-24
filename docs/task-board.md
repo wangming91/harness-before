@@ -264,3 +264,15 @@ Sprint 16：阶段 3 Functional Plan（已完成）
 | S21-003 | 同步 README 和 roadmap 到阶段 3 收尾状态 | Done | `README.md`, `docs/development-roadmap.md` |
 | S21-004 | 明确阶段 4 Attractor Registry 启动条件 | Done | `docs/development-roadmap.md`, `docs/阶段规划.md` |
 | S21-005 | plan-025 验证与独立审计 | Done | `.abh/verifications/ver-3a94943557a8.json`, `docs/audits/audit-025-stage-3-finalization.md` |
+
+## Sprint 22
+
+目标：完成 v0.3.0 正式发布准备，不引入阶段 4 功能。
+
+| ID | 任务 | 状态 | 产出 |
+| --- | --- | --- | --- |
+| S22-001 | 启动 v0.3 Release Prep 计划 | Done | `docs/plans/plan-026-v0-3-release-prep.md` |
+| S22-002 | 提升版本元数据到 0.3.0 | Done | `pyproject.toml`, `abh/__init__.py` |
+| S22-003 | 编写 v0.3.0 release notes | Done | `docs/releases/v0.3.0.md` |
+| S22-004 | 同步 README、roadmap、阶段规划和后续计划编号 | Done | `README.md`, `docs/development-roadmap.md`, `docs/阶段规划.md` |
+| S22-005 | release-prep 验证、审计、关闭和 tag | Done | `audit-026-v0-3-release-prep`, `v0.3.0` |

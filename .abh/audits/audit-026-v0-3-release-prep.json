@@ -1,0 +1,38 @@
+{
+  "schema_version": "1",
+  "id": "audit-026-v0-3-release-prep",
+  "plan_id": "plan-026-v0-3-release-prep",
+  "auditor": "independent-review",
+  "scope": "Independent audit of v0.3 release prep: verify version metadata, release notes, docs alignment, validation evidence, no Stage 4 behavior changes, and tag readiness.",
+  "status": "complete",
+  "result": "pass",
+  "rationale": "Release-prep audit passed: pyproject.toml and abh.__version__ both report 0.3.0; README, roadmap, task-board, 阶段规划, and docs/releases/v0.3.0.md are aligned; no Stage 4 behavior or CLI/MCP/schema/state-machine changes were introduced; verify run ver-eff568515f85 passed with stale=false and ABH version 0.3.0; editable install smoke built abh-0.3.0 and console script doctor/version checks passed.",
+  "evidence": [
+    "docs/plans/plan-026-v0-3-release-prep.md",
+    "pyproject.toml",
+    "abh/__init__.py",
+    "README.md",
+    "docs/development-roadmap.md",
+    "docs/task-board.md",
+    "docs/阶段规划.md",
+    "docs/releases/v0.3.0.md"
+  ],
+  "findings": [
+    {
+      "severity": "Low",
+      "finding": "No blocking release-prep issue",
+      "evidence": "pyproject.toml,abh/__init__.py,docs/releases/v0.3.0.md,.abh/verifications/ver-eff568515f85.json",
+      "recommendation": "Proceed to close plan and tag v0.3.0 after final clean verification"
+    },
+    {
+      "severity": "Info",
+      "finding": "Attractor Registry plan number shifted to plan-027",
+      "evidence": "docs/development-roadmap.md,README.md,docs/阶段规划.md",
+      "recommendation": "Acceptable because plan-026 is now the v0.3 release-prep governance slice"
+    }
+  ],
+  "follow_ups": [],
+  "created_at": "2026-05-24T15:12:04.520092+00:00",
+  "updated_at": "2026-05-24T15:18:29.680825+00:00",
+  "doc_path": "/Users/cc/ai/harness-before/docs/audits/audit-026-v0-3-release-prep.md"
+}
