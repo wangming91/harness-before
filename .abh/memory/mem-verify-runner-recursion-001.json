@@ -1,0 +1,20 @@
+{
+  "schema_version": "1",
+  "id": "mem-verify-runner-recursion-001",
+  "type": "divergent_pattern",
+  "summary": "verify runner checklist must avoid recursive self-invocation",
+  "context": "During plan-016 dogfooding, the initial validation checklist included python3 -m abh verify run plan-016-verify-runner. A runner that blindly executes the checklist would recursively invoke itself.",
+  "implication": "Future verify runner and plan update work should detect or document recursive self-invocation risks, and dogfood plans should use non-recursive smoke commands unless recursion is intentionally tested.",
+  "status": "active",
+  "related": [
+    "plan-016-verify-runner"
+  ],
+  "evidence": [
+    "docs/plans/plan-016-verify-runner.md",
+    ".abh/plans/plan-016-verify-runner.json"
+  ],
+  "deprecation_policy": "Mark deprecated when evidence no longer applies.",
+  "created_at": "2026-05-24T06:25:45.799375+00:00",
+  "updated_at": "2026-05-24T06:25:45.799558+00:00",
+  "doc_path": "/Users/cc/ai/harness-before/docs/memory/mem-verify-runner-recursion-001.md"
+}
