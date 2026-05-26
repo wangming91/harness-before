@@ -1,0 +1,22 @@
+{
+  "schema_version": "1",
+  "id": "attractor-abh-core",
+  "title": "ABH Core",
+  "version": "0.1.0",
+  "status": "active",
+  "path": "docs/architecture/attractors/abh-core-attractor.md",
+  "owner": "architecture",
+  "supersedes": "none",
+  "reason": "",
+  "impact": "",
+  "migration_strategy": "",
+  "intent": "Attractor Before Harness 的核心结构必须收敛到一个 Git-native、证据优先、生成与验收分离的轨迹控制框架。",
+  "invariants": [
+    "每个可执行 plan 必须绑定一个 active attractor。",
+    "验证结果只能证明机器检查状态，不能直接证明计划完成。",
+    "计划关闭必须依赖独立 audit。"
+  ],
+  "created_at": "2026-05-26T10:04:22.147001+00:00",
+  "updated_at": "2026-05-26T10:04:22.147225+00:00",
+  "doc_path": "docs/architecture/attractors/abh-core-attractor.md"
+}

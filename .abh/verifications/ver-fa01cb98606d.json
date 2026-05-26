@@ -1,0 +1,103 @@
+{
+  "schema_version": "1",
+  "id": "ver-fa01cb98606d",
+  "plan_id": "plan-029-attractor-registry",
+  "command": "python3 -m unittest tests/test_cli.py -v && python3 -m abh doctor && git diff --check && python3 -m abh attractor active --json && python3 -m abh plan status plan-029-attractor-registry --json",
+  "result": "pass",
+  "artifacts": [
+    "command='python3 -m unittest tests/test_cli.py -v'; exit_code=0; duration_seconds=2.033; stdout=''; stderr='test_abh_error_json_returns_structured_error (tests.test_cli.CliTests.test_abh_error_json_returns_structured_error) ... ok\\\\ntest_agent_first_command_contract_describes_existing_agent_commands (tests.test_cli.CliTests.test_agent_first_command_contract_describes_existing_agent_commands) ... ok\\\\ntest_attractor_create_active_show_list_and_supersede_json_flow (tests.test_cli.CliTests.test_attractor_create_active_show_list_and_supersede_json_flow) ... ok\\\\ntest_audit_list_returns_all_audits (tests.test'",
+    "command='python3 -m abh doctor'; exit_code=0; duration_seconds=0.059; stdout='doctor: ok'; stderr=''",
+    "command='git diff --check'; exit_code=0; duration_seconds=0.017; stdout=''; stderr=''",
+    "command='python3 -m abh attractor active --json'; exit_code=0; duration_seconds=0.038; stdout='{\"schema_version\": \"1\", \"ok\": true, \"command\": \"attractor active\", \"data\": {\"attractor\": {\"schema_version\": \"1\", \"id\": \"attractor-abh-core\", \"title\": \"ABH Core\", \"version\": \"0.1.0\", \"status\": \"active\", \"path\": \"docs/architecture/attractors/abh-core-attractor.md\", \"owner\": \"architecture\", \"supersedes\": \"none\", \"reason\": \"\", \"impact\": \"\", \"migration_strategy\": \"\", \"intent\": \"Attractor Before Harness 的核心结构必须收敛到一个 Git-native、证据优先、生成与验收分离的轨迹控制框架。\", \"invariants\": [\"每个可执行 plan 必须绑定一个 active attractor。\"'; stderr=''",
+    "command='python3 -m abh plan status plan-029-attractor-registry --json'; exit_code=0; duration_seconds=0.039; stdout='{\"schema_version\": \"1\", \"ok\": true, \"command\": \"plan status\", \"data\": {\"plan\": {\"schema_version\": \"1\", \"id\": \"plan-029-attractor-registry\", \"title\": \"Attractor Registry MVP\", \"attractor\": \"docs/architecture/attractors/abh-core-attractor.md\", \"baseline\": \"Stage 4 has a shared Agent-First command contract, but active attractor is still only a markdown convention and not a CLI/MCP-readable ABH object.\", \"owner\": \"platform\", \"status\": \"running\", \"goals\": [\"Introduce AttractorRecord and a local attra'; stderr=''"
+  ],
+  "failed_checks": [],
+  "failure_classifications": [],
+  "environment": {
+    "cwd": "/Users/cc/ai/harness-before",
+    "git": {
+      "commit": "e0680abdcbd21dfa4233b788586e6d19d0078934",
+      "dirty": true,
+      "status_hash": "10d4e19a6135a5a2908d80e1f7b3277ec317b893434f17a1e0116b979ec34737",
+      "available": true
+    },
+    "abh": {
+      "version": "0.3.0"
+    },
+    "python": {
+      "version": "3.13.3 (main, Jan 27 2026, 20:15:53) [Clang 17.0.0 (clang-1700.6.3.2)]",
+      "executable": "/Users/cc/.pyenv/versions/3.13.3/bin/python3"
+    },
+    "runner": {
+      "timeout_seconds": 120,
+      "shell": true,
+      "check_count": 5
+    },
+    "commands": [
+      {
+        "command": "python3 -m unittest tests/test_cli.py -v",
+        "argv": [
+          "python3",
+          "-m",
+          "unittest",
+          "tests/test_cli.py",
+          "-v"
+        ]
+      },
+      {
+        "command": "python3 -m abh doctor",
+        "argv": [
+          "python3",
+          "-m",
+          "abh",
+          "doctor"
+        ]
+      },
+      {
+        "command": "git diff --check",
+        "argv": [
+          "git",
+          "diff",
+          "--check"
+        ]
+      },
+      {
+        "command": "python3 -m abh attractor active --json",
+        "argv": [
+          "python3",
+          "-m",
+          "abh",
+          "attractor",
+          "active",
+          "--json"
+        ]
+      },
+      {
+        "command": "python3 -m abh plan status plan-029-attractor-registry --json",
+        "argv": [
+          "python3",
+          "-m",
+          "abh",
+          "plan",
+          "status",
+          "plan-029-attractor-registry",
+          "--json"
+        ]
+      }
+    ],
+    "environment_variables": {},
+    "plan": {
+      "updated_at": "2026-05-26T09:14:30.651536+00:00",
+      "content_hash": "d67389f2fe60d7e21df40380d9a693f6921cf70181a72abfb8eb8433b02aaab2",
+      "validation_checklist": [
+        "python3 -m unittest tests/test_cli.py -v",
+        "python3 -m abh doctor",
+        "git diff --check",
+        "python3 -m abh attractor active --json",
+        "python3 -m abh plan status plan-029-attractor-registry --json"
+      ]
+    }
+  },
+  "trust_level": "local_shell",
+  "created_at": "2026-05-26T10:09:31.204773+00:00"
+}
