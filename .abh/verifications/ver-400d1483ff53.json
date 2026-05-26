@@ -1,0 +1,90 @@
+{
+  "schema_version": "1",
+  "id": "ver-400d1483ff53",
+  "plan_id": "plan-028-agent-first-command-contract",
+  "command": "python3 -m unittest tests/test_cli.py -v && python3 -m abh doctor && git diff --check && python3 -m abh plan status plan-028-agent-first-command-contract --json",
+  "result": "pass",
+  "artifacts": [
+    "command='python3 -m unittest tests/test_cli.py -v'; exit_code=0; duration_seconds=1.983; stdout=''; stderr='test_abh_error_json_returns_structured_error (tests.test_cli.CliTests.test_abh_error_json_returns_structured_error) ... ok\\\\ntest_agent_first_command_contract_describes_existing_agent_commands (tests.test_cli.CliTests.test_agent_first_command_contract_describes_existing_agent_commands) ... ok\\\\ntest_audit_list_returns_all_audits (tests.test_cli.CliTests.test_audit_list_returns_all_audits) ... ok\\\\ntest_audit_record_allows_close_only_after_pass (tests.test_cli.CliTests.test_audit_record_allows_close'",
+    "command='python3 -m abh doctor'; exit_code=0; duration_seconds=0.046; stdout='doctor: ok'; stderr=''",
+    "command='git diff --check'; exit_code=0; duration_seconds=0.012; stdout=''; stderr=''",
+    "command='python3 -m abh plan status plan-028-agent-first-command-contract --json'; exit_code=0; duration_seconds=0.053; stdout='{\"schema_version\": \"1\", \"ok\": true, \"command\": \"plan status\", \"data\": {\"plan\": {\"schema_version\": \"1\", \"id\": \"plan-028-agent-first-command-contract\", \"title\": \"Agent-First Command Contract\", \"attractor\": \"docs/architecture/attractors/abh-core-attractor.md\", \"baseline\": \"Stage 4 has a documented Agent-First direction, but CLI JSON helpers and MCP tool schemas still duplicate command contract metadata; MCP plan status also lacks the CLI verification_summary.\", \"owner\": \"platform\", \"status\": \"runni'; stderr=''"
+  ],
+  "failed_checks": [],
+  "failure_classifications": [],
+  "environment": {
+    "cwd": "/Users/cc/ai/harness-before",
+    "git": {
+      "commit": "dc9da84cb6cfc23caf1ecda12a71b2a8262a9662",
+      "dirty": true,
+      "status_hash": "d70b1f5ad631469efc414f1aa422385af211c0772247d37ad6f97332515c3eef",
+      "available": true
+    },
+    "abh": {
+      "version": "0.3.0"
+    },
+    "python": {
+      "version": "3.13.3 (main, Jan 27 2026, 20:15:53) [Clang 17.0.0 (clang-1700.6.3.2)]",
+      "executable": "/Users/cc/.pyenv/versions/3.13.3/bin/python3"
+    },
+    "runner": {
+      "timeout_seconds": 120,
+      "shell": true,
+      "check_count": 4
+    },
+    "commands": [
+      {
+        "command": "python3 -m unittest tests/test_cli.py -v",
+        "argv": [
+          "python3",
+          "-m",
+          "unittest",
+          "tests/test_cli.py",
+          "-v"
+        ]
+      },
+      {
+        "command": "python3 -m abh doctor",
+        "argv": [
+          "python3",
+          "-m",
+          "abh",
+          "doctor"
+        ]
+      },
+      {
+        "command": "git diff --check",
+        "argv": [
+          "git",
+          "diff",
+          "--check"
+        ]
+      },
+      {
+        "command": "python3 -m abh plan status plan-028-agent-first-command-contract --json",
+        "argv": [
+          "python3",
+          "-m",
+          "abh",
+          "plan",
+          "status",
+          "plan-028-agent-first-command-contract",
+          "--json"
+        ]
+      }
+    ],
+    "environment_variables": {},
+    "plan": {
+      "updated_at": "2026-05-26T07:56:42.529714+00:00",
+      "content_hash": "efd62a37f817d81bdb65c774332e4f735b8542f171226f5c62bf4e74d14b84f5",
+      "validation_checklist": [
+        "python3 -m unittest tests/test_cli.py -v",
+        "python3 -m abh doctor",
+        "git diff --check",
+        "python3 -m abh plan status plan-028-agent-first-command-contract --json"
+      ]
+    }
+  },
+  "trust_level": "local_shell",
+  "created_at": "2026-05-26T07:58:28.712403+00:00"
+}
