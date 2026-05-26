@@ -180,7 +180,7 @@ Write tools must:
 
 ### Layer 6: Agent-First Command Contract
 
-Stage 4 should introduce a shared command contract module that both CLI and MCP adapters consume.
+Stage 4 introduces a shared command contract module that both CLI and MCP adapters consume. `plan-028-agent-first-command-contract` started with the existing agent-facing command surface before adding new Stage 4 commands.
 
 Each command contract should describe:
 
@@ -202,7 +202,9 @@ Initial Stage 4 command families:
 - `next`: recommend the next ABH action from current repository state;
 - `onboarding.check`: check whether the repository is ABH-ready for agents.
 
-The CLI adapter may still provide human-readable output, but every Stage 4 command should first define its JSON result. The MCP adapter should use the same command contract and only translate it into MCP tool metadata and `structuredContent`.
+The first implementation surface is `abh.commands`. It records stable command ids, CLI command labels, MCP tool names, read/write classification, confirmation boundary, side effects, input schemas, output keys, and failure categories. CLI JSON envelope helpers and MCP tool definitions should consume this layer instead of maintaining parallel schema tables.
+
+The CLI adapter may still provide human-readable output, but every Stage 4 command should first define its JSON result. The MCP adapter should use the same command contract and only translate it into MCP tool metadata and `structuredContent`. Future `abh attractor`, `abh init`, `abh agent setup`, hooks, `abh next`, and onboarding commands must be added to the contract before or alongside their CLI/MCP adapters.
 
 ### Layer 7: Agent Navigation
 
@@ -226,7 +228,9 @@ This is the main convenience layer for agents. Agents should not have to memoriz
 - `plan-013-json-output-and-errors`: completed; implemented JSON output and structured errors for read commands.
 - `plan-014-readonly-mcp-server`: completed; exposes read-only MCP tools over the JSON/internal object contract.
 - `plan-015-controlled-mcp-write-tools`: completed; exposes controlled MCP write tools with explicit confirmation and existing ABH gates.
-- `plan-027-stage-4-attractor-entry-plan`: current Stage 4 planning slice; defines Agent-First attractor entry and promotes the shared command contract as the technical baseline for `abh attractor`, `abh init`, `abh agent setup`, hooks, `abh next`, and onboarding checks.
+- `plan-027-stage-4-attractor-entry-plan`: completed; defined Agent-First attractor entry and promoted the shared command contract as the technical baseline for `abh attractor`, `abh init`, `abh agent setup`, hooks, `abh next`, and onboarding checks.
+- `plan-028-agent-first-command-contract`: completed; extracted the shared command contract layer for the existing CLI/MCP surface and aligned MCP `abh_plan_status` with CLI `plan status --json`.
+- `plan-029-attractor-registry`: next Stage 4 implementation slice; should add the active attractor registry through the shared command contract before exposing CLI/MCP adapters.
 
 ## Milestone Status
 

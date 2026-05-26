@@ -2,7 +2,7 @@
 
 ## 当前阶段
 
-Sprint 23：阶段 4 Agent-First 吸引子入口层（进行中）
+Sprint 24：Agent-First Command Contract（已完成）
 
 ## 状态说明
 
@@ -287,4 +287,18 @@ Sprint 23：阶段 4 Agent-First 吸引子入口层（进行中）
 | S23-002 | 将 Agent-First Command Contract 纳入 Agent Protocol | Done | `docs/architecture/agent-protocol.md` |
 | S23-003 | 同步 README、roadmap、阶段规划和 task-board | Done | `README.md`, `docs/development-roadmap.md`, `docs/阶段规划.md`, `docs/task-board.md` |
 | S23-004 | 确认阶段 4 计划队列和下一条实现计划 | Done | `plan-028-agent-first-command-contract` |
-| S23-005 | plan-027 验证与独立审计 | Review | `.abh/verifications/ver-789e779e8498.json`, `docs/audits/audit-027-stage-4-attractor-entry-plan.md` |
+| S23-005 | plan-027 验证与独立审计 | Done | `.abh/verifications/ver-49c8fc69492a.json`, `docs/audits/audit-027-stage-4-attractor-entry-plan.md` |
+
+## Sprint 24
+
+目标：实现 Stage 4 的 Agent-First Command Contract 技术底座，让 CLI、MCP、后续 hooks/setup/next 共用命令元数据、JSON envelope、side effects 和确认边界。
+
+| ID | 任务 | 状态 | 产出 |
+| --- | --- | --- | --- |
+| S24-001 | 启动 Agent-First Command Contract 计划 | Done | `docs/plans/plan-028-agent-first-command-contract.md` |
+| S24-002 | 抽出共享 command contract 模块 | Done | `abh/commands.py` |
+| S24-003 | 让 CLI JSON envelope 使用共享契约 helper | Done | `abh/cli.py`, `abh/commands.py` |
+| S24-004 | 让 MCP tool definitions 使用共享契约 metadata | Done | `abh/mcp_server.py`, `abh/commands.py` |
+| S24-005 | 对齐 MCP `abh_plan_status` 与 CLI `plan status --json` 的 `verification_summary` | Done | `abh/mcp_server.py`, `tests/test_cli.py` |
+| S24-006 | 同步 Agent Protocol、README、roadmap 和阶段规划 | Done | `docs/architecture/agent-protocol.md`, `README.md`, `docs/development-roadmap.md`, `docs/阶段规划.md` |
+| S24-007 | plan-028 验证与独立审计 | Done | `.abh/verifications/ver-400d1483ff53.json`, `docs/audits/audit-028-agent-first-command-contract.md` |
