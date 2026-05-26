@@ -79,6 +79,31 @@ class CliTests(TestCase):
         self.assertIs(core.analyze_drift, drift.analyze_drift)
         self.assertIs(core.route_question, routing.route_question)
 
+    def test_agent_first_command_contract_describes_existing_agent_commands(self) -> None:
+        from abh.commands import command_contract, make_envelope
+
+        plan_status = command_contract("plan.status")
+        self.assertEqual(plan_status.cli_command, "plan status")
+        self.assertEqual(plan_status.mcp_tool, "abh_plan_status")
+        self.assertTrue(plan_status.read_only)
+        self.assertEqual(plan_status.confirmation, "none")
+        self.assertEqual(plan_status.side_effects, [])
+        self.assertIn("plan_id", plan_status.input_schema["properties"])
+
+        plan_create = command_contract("plan.create")
+        self.assertEqual(plan_create.cli_command, "plan create")
+        self.assertEqual(plan_create.mcp_tool, "abh_plan_create")
+        self.assertFalse(plan_create.read_only)
+        self.assertEqual(plan_create.confirmation, "confirm=true")
+        self.assertIn("confirm", plan_create.input_schema["required"])
+        self.assertTrue(any(".abh/plans/" in effect for effect in plan_create.side_effects))
+
+        envelope = make_envelope(ok=True, command="plan.status", data={"plan": {"id": "plan-contract"}})
+        self.assertEqual(envelope["schema_version"], "1")
+        self.assertTrue(envelope["ok"])
+        self.assertEqual(envelope["command"], "plan.status")
+        self.assertEqual(envelope["errors"], [])
+
     def test_plan_create_status_transition_and_verify(self) -> None:
         code, out, err = self.run_cli(
             "plan",
@@ -1542,6 +1567,9 @@ class McpServerTests(TestCase):
         self.assertTrue(envelope["ok"])
         self.assertEqual(envelope["command"], "abh_plan_status")
         self.assertEqual(envelope["data"]["plan"]["id"], "plan-mcp-contract")
+        self.assertIn("verification_summary", envelope["data"])
+        self.assertEqual(envelope["data"]["verification_summary"]["latest_id"], None)
+        self.assertEqual(envelope["data"]["verification_summary"]["reasons"], ["no_verification_runs"])
 
         doctor_response = self.call_mcp(
             {

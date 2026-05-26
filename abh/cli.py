@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import argparse
-import json
 import sys
 from typing import Any
 
+from .commands import dumps_envelope, make_envelope
 from .core import (
     AbhError,
     add_memory,
@@ -26,7 +26,6 @@ from .core import (
     update_plan_record,
     validate_identifier,
 )
-from .models import SCHEMA_VERSION
 
 
 def add_json_argument(parser: argparse.ArgumentParser) -> None:
@@ -42,24 +41,6 @@ def command_name(args: argparse.Namespace) -> str:
     return " ".join(parts)
 
 
-def make_envelope(
-    *,
-    ok: bool,
-    command: str,
-    data: dict[str, Any] | None = None,
-    errors: list[dict[str, Any]] | None = None,
-    warnings: list[dict[str, Any]] | None = None,
-) -> dict[str, Any]:
-    return {
-        "schema_version": SCHEMA_VERSION,
-        "ok": ok,
-        "command": command,
-        "data": data or {},
-        "errors": errors or [],
-        "warnings": warnings or [],
-    }
-
-
 def print_json_envelope(
     *,
     ok: bool,
@@ -68,7 +49,7 @@ def print_json_envelope(
     errors: list[dict[str, Any]] | None = None,
     warnings: list[dict[str, Any]] | None = None,
 ) -> None:
-    print(json.dumps(make_envelope(ok=ok, command=command, data=data, errors=errors, warnings=warnings), ensure_ascii=False))
+    print(dumps_envelope(ok=ok, command=command, data=data, errors=errors, warnings=warnings))
 
 
 def categorize_abh_error(message: str) -> str:
