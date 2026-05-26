@@ -1,0 +1,44 @@
+# Audit: plan-028-agent-first-command-contract
+
+## Metadata
+
+- Audit ID: audit-028-agent-first-command-contract
+- Plan: plan-028-agent-first-command-contract
+- Auditor: independent-review
+- Status: complete
+- Created: 2026-05-26T07:56:42.528737+00:00
+- Updated: 2026-05-26T08:29:12.297891+00:00
+
+## Scope
+
+独立审计 plan-028-agent-first-command-contract：验证 Agent-First shared command contract 是否覆盖现有 CLI/MCP agent-facing commands，MCP tool metadata 是否来自共享契约，CLI JSON envelope 是否保持兼容，MCP plan status 是否与 CLI plan status --json 对齐，且未越过非目标。
+
+## Evidence Reviewed
+
+- docs/plans/plan-028-agent-first-command-contract.md
+- .abh/plans/plan-028-agent-first-command-contract.json
+- .abh/verifications/ver-4d435668387f.json
+- abh/commands.py
+- abh/cli.py
+- abh/mcp_server.py
+- tests/test_cli.py
+- docs/architecture/agent-protocol.md
+- docs/development-roadmap.md
+- docs/task-board.md
+- README.md
+- docs/阶段规划.md
+
+## Findings
+
+| Severity | Finding | Evidence | Recommendation |
+| --- | --- | --- | --- |
+|  |  |  |  |
+
+## Verdict
+
+- Result: pass
+- Rationale: Independent audit PASS: plan-028 satisfies goals and exit criteria, respects non-goals, provides shared Agent-First command contract foundation, preserves existing JSON/MCP behavior, and introduces no premature Stage 4 user-visible commands.
+
+## Follow-Ups
+
+- 
