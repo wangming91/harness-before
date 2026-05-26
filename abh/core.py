@@ -12,6 +12,17 @@ from .audits import (
     request_audit,
     save_audit,
 )
+from .attractors import (
+    active_attractor,
+    create_attractor,
+    is_active_attractor_reference,
+    list_attractors,
+    load_attractor,
+    render_attractor_markdown,
+    save_attractor,
+    seed_active_attractor_from_document,
+    supersede_attractor,
+)
 from .drift import (
     DRIFT_RULES,
     analyze_drift,
@@ -45,8 +56,10 @@ from .plans import (
 from .routing import ROUTES, route_question
 from .storage import (
     audits_dir,
+    attractors_dir,
     drift_dir,
     docs_audits_dir,
+    docs_attractors_dir,
     docs_drift_dir,
     docs_memory_dir,
     docs_plans_dir,
@@ -62,6 +75,7 @@ from .verifications import is_recursive_verify_command, load_verification, recor
 DOCTOR_OBJECTS: tuple[tuple[str, str, Callable[[Path | None], Path], Callable[[Path | None], Path]], ...] = (
     ("plan", "plan-", plans_dir, docs_plans_dir),
     ("audit", "audit-", audits_dir, docs_audits_dir),
+    ("attractor", "attractor-", attractors_dir, docs_attractors_dir),
     ("memory", "mem-", memory_dir, docs_memory_dir),
     ("drift", "drift-", drift_dir, docs_drift_dir),
 )
@@ -78,6 +92,10 @@ def doctor(cwd: Path | None = None) -> list[str]:
                 data = read_json(path)
                 if data.get("schema_version") != "1":
                     issues.append(f"missing schema_version for {label} {path.stem}")
+                if label == "attractor":
+                    doc_path = data.get("doc_path") or data.get("path")
+                    if isinstance(doc_path, str) and doc_path and not Path(doc_path).exists():
+                        issues.append(f"missing markdown for attractor {path.stem}")
         doc_ids = set()
         if docs_dir.exists():
             doc_ids = {
@@ -85,6 +103,8 @@ def doctor(cwd: Path | None = None) -> list[str]:
                 for path in docs_dir.glob("*.md")
                 if path.name != "README.md" and path.stem.startswith(prefix)
             }
+        if label == "attractor":
+            continue
         for object_id in sorted(json_ids - doc_ids):
             issues.append(f"missing markdown for {label} {object_id}")
         for object_id in sorted(doc_ids - json_ids):

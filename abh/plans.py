@@ -86,12 +86,18 @@ def create_plan(
 ) -> PlanRecord:
     ensure_workspace(cwd)
     validate_identifier(plan_id, "plan id")
-    require_existing_path(attractor, "attractor")
     if status not in {"draft", "ready"}:
         raise AbhError("plan create only supports draft or ready status")
     plan_path = plan_json_path(plan_id, cwd)
     if plan_path.exists():
         raise AbhError(f"plan already exists: {plan_id}")
+    if status == "ready":
+        from .attractors import is_active_attractor_reference
+
+        if not is_active_attractor_reference(attractor, cwd):
+            raise AbhError("plan ready requires current active attractor id or path")
+    else:
+        require_existing_path(attractor, "attractor")
     plan = PlanRecord(
         id=plan_id,
         title=title,
@@ -163,6 +169,10 @@ def validate_plan_ready(plan: PlanRecord) -> None:
         missing.append("closure_evidence")
     if missing:
         raise AbhError(f"plan is not ready; missing: {', '.join(missing)}")
+    from .attractors import is_active_attractor_reference
+
+    if not is_active_attractor_reference(plan.attractor):
+        raise AbhError("plan is not ready; attractor must reference current active attractor id or path")
 
 
 def transition_plan(plan_id: str, target_status: str, cwd: Path | None = None) -> PlanRecord:
