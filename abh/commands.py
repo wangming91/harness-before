@@ -79,6 +79,30 @@ COMMON_FAILURES = ["validation", "not_found", "business_rule", "consistency", "s
 
 COMMANDS: tuple[CommandContract, ...] = (
     CommandContract(
+        id="init.workspace",
+        cli_command="init",
+        mcp_tool=None,
+        read_only=False,
+        confirmation="--write --confirm",
+        side_effects=[
+            "create .abh/ workspace directories",
+            "create docs/index.md",
+            "create docs/context/ owner docs",
+            "create docs/requirements/ and docs/design/ directories",
+            "write .abh/attractors/attractor-abh-core.json",
+            "write docs/architecture/attractors/abh-core-attractor.md when absent",
+        ],
+        description="Preview or initialize an ABH workspace around the default active attractor and AGE owner docs.",
+        input_schema=input_schema(
+            {
+                "write": bool_property("Write the previewed workspace files."),
+                "confirm": bool_property("Must be present with --write to permit repository writes."),
+            }
+        ),
+        output_keys=["init"],
+        failure_categories=COMMON_FAILURES,
+    ),
+    CommandContract(
         id="attractor.list",
         cli_command="attractor list",
         mcp_tool="abh_attractor_list",

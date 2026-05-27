@@ -2,7 +2,7 @@
 
 ## 当前阶段
 
-Sprint 25：Attractor Registry MVP（已完成）
+Sprint 28：ABH Init Active Attractor（已完成）
 
 ## 状态说明
 
@@ -325,11 +325,11 @@ Sprint 25：Attractor Registry MVP（已完成）
 | ID | 任务 | 状态 | 产出 |
 | --- | --- | --- | --- |
 | S26-001 | 启动 Roadmap Queue and Plan Numbering 计划 | Done | `docs/plans/plan-030-roadmap-queue-and-plan-numbering.md` |
-| S26-002 | 新增 roadmap queue 数据文件和领域模块 | Doing | `.abh/roadmap.json`, `abh/roadmap.py` |
-| S26-003 | 新增 `abh roadmap list/next-id/check/materialize` | Doing | `abh/cli.py`, `abh/commands.py`, `abh/mcp_server.py` |
-| S26-004 | 接入 doctor 编号/queue 一致性检查 | Doing | `abh/core.py`, `tests/test_cli.py` |
-| S26-005 | 将未来计划文档改为稳定 queue key | Doing | `README.md`, `docs/development-roadmap.md`, `docs/阶段规划.md`, `docs/architecture/agent-protocol.md` |
-| S26-006 | plan-030 验证与独立审计 | To Do | `.abh/verifications/`, `docs/audits/audit-030-roadmap-queue-and-plan-numbering.md` |
+| S26-002 | 新增 roadmap queue 数据文件和领域模块 | Done | `.abh/roadmap.json`, `abh/roadmap.py` |
+| S26-003 | 新增 `abh roadmap list/next-id/check/materialize` | Done | `abh/cli.py`, `abh/commands.py`, `abh/mcp_server.py` |
+| S26-004 | 接入 doctor 编号/queue 一致性检查 | Done | `abh/core.py`, `tests/test_cli.py` |
+| S26-005 | 将未来计划文档改为稳定 queue key | Done | `README.md`, `docs/development-roadmap.md`, `docs/阶段规划.md`, `docs/architecture/agent-protocol.md` |
+| S26-006 | plan-030 验证与独立审计 | Done | `.abh/verifications/`, `docs/audits/audit-030-roadmap-queue-and-plan-numbering.md` |
 
 ## Sprint 27
 
@@ -342,3 +342,15 @@ Sprint 25：Attractor Registry MVP（已完成）
 | S27-003 | 新增 context owner docs | Done | `docs/context/source-of-truth.md`, `docs/context/project-context.md`, `docs/context/conventions.md`, `docs/context/codebase-map.md` |
 | S27-004 | 同步 Stage 4 roadmap 和 Agent Protocol | Done | `docs/development-roadmap.md`, `docs/architecture/agent-protocol.md` |
 | S27-005 | plan-031 验证与独立审计 | Done | `.abh/verifications/ver-a628d91e3765.json`, `docs/audits/audit-031-truth-precedence-and-age-docs.md` |
+
+## Sprint 28
+
+目标：实现 `abh init` 的最小 Agent-First 初始化切片，让新仓库围绕 active attractor 建立 `.abh/`、docs baseline 和 AGE owner docs，并且写入前可机器读取 preview。
+
+| ID | 任务 | 状态 | 产出 |
+| --- | --- | --- | --- |
+| S28-001 | materialize ABH Init Active Attractor 计划 | Done | `stage4.abh-init-active-attractor` -> `docs/plans/plan-032-abh-init-active-attractor.md` |
+| S28-002 | 定义 `abh init` command contract 和 CLI JSON preview | Done | `abh/commands.py`, `abh/cli.py`, `tests/test_cli.py` |
+| S28-003 | 实现初始化写入与不覆盖保护 | Done | `abh/init.py`, `tests/test_cli.py` |
+| S28-004 | 同步 README、roadmap、阶段规划和 Agent Protocol | Done | `README.md`, `docs/development-roadmap.md`, `docs/阶段规划.md`, `docs/architecture/agent-protocol.md` |
+| S28-005 | plan-032 验证、独立审计和关闭 | Done | `.abh/verifications/ver-1e9ba9045ad4.json`, `docs/audits/audit-032-abh-init-active-attractor.md` |

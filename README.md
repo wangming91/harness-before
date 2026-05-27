@@ -17,12 +17,15 @@
 当前项目提供一个名为 `abh` 的命令行工具，支持以下能力：
 
 - `plan`：创建、查看、列出和迁移计划状态（6 状态状态机）
+- `init`：预览或初始化 ABH workspace，生成 `.abh/`、active attractor 和 AGE owner docs
 - `verify`：记录验证命令及其结果
 - `audit`：发起、记录和列出独立审计
 - `close`：在满足条件后关闭计划
 - `memory`：记录、检索和列出外部化记忆
 - `route`：根据问题输出建议阅读顺序（含活跃计划和相关记忆）
 - `drift`：识别基础漂移并生成漂移报告（支持以计划为基准）
+- `attractor`：管理 active attractor，并在 plan ready 前校验吸引子绑定
+- `roadmap`：维护稳定 roadmap queue，并在 materialize 时分配真实 plan 编号
 - `doctor`：检查 `.abh/` JSON 与 `docs/` Markdown 是否保持一致
 
 所有命令把结构化数据写入 `.abh/` 目录（JSON），同时同步生成 `docs/` 下的 Markdown 文档，便于回放、审查和复用。
@@ -111,7 +114,7 @@ python3 -m unittest tests/test_cli.py
 
 项目版本以 `pyproject.toml` 的 `[project].version` 和 `abh.__version__` 为准，两者必须保持一致。README 中声明的新 CLI 能力、安装方式或运行要求发生变化时，必须同步检查版本是否需要提升，并在对应 plan 的 closure evidence 中说明。
 
-当前版本为 `0.3.0`，对应阶段 3 Verify Runner：项目已经具备显式 JSON CLI contract、结构化错误输出、只读 MCP Server、受控 MCP 写工具、本地验证执行器、计划更新、验证环境元数据、可信等级、stale 提示、失败分类、原子写和领域模块拆分。受控写工具必须显式传入 `confirm=true`，并复用现有 core 规则，不能绕过 plan 状态机、验证记录、审计关闭门禁或 doctor 一致性检查。
+当前发布版本为 `0.3.0`，对应阶段 3 Verify Runner：项目已经具备显式 JSON CLI contract、结构化错误输出、只读 MCP Server、受控 MCP 写工具、本地验证执行器、计划更新、验证环境元数据、可信等级、stale 提示、失败分类、原子写和领域模块拆分。当前开发线已经进入阶段 4 Agent-First 吸引子入口层：`plan-031-truth-precedence-and-age-docs` 已完成 AGE owner-doc baseline，`plan-032-abh-init-active-attractor` 已完成 `abh init` 最小初始化切片。受控写工具必须显式传入 `confirm=true`，并复用现有 core 规则，不能绕过 plan 状态机、验证记录、审计关闭门禁或 doctor 一致性检查。
 
 ## CI 与关闭门禁
 
@@ -379,6 +382,8 @@ python3 -m abh.mcp_server
 ## 项目结构
 
 - `abh/`：CLI 和核心逻辑
+- `docs/index.md`：Agent 和维护者进入仓库时的文档路由入口
+- `docs/context/`：项目上下文、真相源优先级、约定和代码地图
 - `docs/architecture/`：吸引子与架构说明
 - `docs/plans/`：计划文档（Markdown）
 - `docs/audits/`：审计文档（Markdown）
@@ -400,8 +405,8 @@ python3 -m abh.mcp_server
 
 - 阶段 3 功能规划已收尾：`plan-016-verify-runner` 至 `plan-025-stage-3-finalization` 构成 v0.3 Verify Runner 里程碑，覆盖本地验证执行、计划更新、验证环境元数据、可信等级、stale 提示、失败分类、原子写和领域模块拆分
 - v0.3.0 发布准备由 `plan-026-v0-3-release-prep` 收口，release notes 见 `docs/releases/v0.3.0.md`
-- 下一阶段：阶段 4 Agent-First 吸引子入口层，已从 `plan-027-stage-4-attractor-entry-plan` 启动；`plan-028-agent-first-command-contract` 和 `plan-029-attractor-registry` 已完成，当前进入 `plan-030-roadmap-queue-and-plan-numbering`，先把未来计划编号从文档手写改为 roadmap queue 自动 materialize；下一条实现项用稳定 key `stage4.abh-init-active-attractor` 表示
-- 未来路线图不再为未创建计划预写 `plan-031` 这类具体编号；未 materialize 的事项使用 `.abh/roadmap.json` 中的稳定 key，真实 plan id 只在 `abh roadmap materialize <key>` 时分配
+- 阶段 4 Agent-First 吸引子入口层已启动：`plan-027-stage-4-attractor-entry-plan`、`plan-028-agent-first-command-contract`、`plan-029-attractor-registry`、`plan-030-roadmap-queue-and-plan-numbering`、`plan-031-truth-precedence-and-age-docs` 和 `plan-032-abh-init-active-attractor` 已完成；下一项是 `stage4.agent-contract-setup`
+- 未来路线图不再为未创建计划预写 `plan-033` 这类具体编号；未 materialize 的事项使用 `.abh/roadmap.json` 中的稳定 key，真实 plan id 只在 `abh roadmap materialize <key>` 时分配
 - 阶段 4 的目标不是普通 onboarding，而是让 Codex、Claude Code 和 MCP 客户端默认通过 JSON/非交互命令进入 active attractor -> plan -> verification -> audit -> memory 的轨迹控制回路；人类主要负责定义吸引子、批准写入和执行独立审计
 - 后续提升漂移分析精度：从关键词匹配升级到更高质量的证据提取
 - 增加 `abh report`，展示计划关闭率、审计驳回率和重复漂移情况

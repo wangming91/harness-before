@@ -4,6 +4,7 @@
 
 - `abh/cli.py` — argparse CLI adapter and human/JSON output handlers.
 - `abh/commands.py` — Agent-First command contract, JSON envelope helpers, MCP tool metadata.
+- `abh/init.py` — `abh init` preview/write planning, AGE owner-doc templates, and default active attractor seeding.
 - `abh/models.py` — schema-versioned records for attractors, plans, verifications, audits, memory, drift, and roadmap queue items.
 - `abh/storage.py` — path helpers, workspace directories, atomic text/JSON writes, and local file locks.
 - `abh/core.py` — compatibility re-export layer plus workspace doctor.
@@ -27,6 +28,7 @@
 ## Primary Command Families
 
 - `abh attractor ...`
+- `abh init`
 - `abh plan ...`
 - `abh verify ...`
 - `abh audit ...`

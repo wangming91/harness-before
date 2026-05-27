@@ -77,8 +77,8 @@
         "docs/development-roadmap.md",
         "docs/阶段规划.md"
       ],
-      "status": "queued",
-      "plan_id": null
+      "status": "materialized",
+      "plan_id": "plan-032-abh-init-active-attractor"
     },
     {
       "key": "stage4.agent-contract-setup",

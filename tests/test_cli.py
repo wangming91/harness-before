@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import io
 import json
+import shutil
 import subprocess
 import tempfile
 import threading
@@ -99,11 +100,107 @@ class CliTests(TestCase):
         self.assertIn("confirm", plan_create.input_schema["required"])
         self.assertTrue(any(".abh/plans/" in effect for effect in plan_create.side_effects))
 
+        init_workspace = command_contract("init.workspace")
+        self.assertEqual(init_workspace.cli_command, "init")
+        self.assertFalse(init_workspace.read_only)
+        self.assertEqual(init_workspace.confirmation, "--write --confirm")
+        self.assertIn("write", init_workspace.input_schema["properties"])
+        self.assertIn("confirm", init_workspace.input_schema["properties"])
+        self.assertTrue(any("docs/index.md" in effect for effect in init_workspace.side_effects))
+
         envelope = make_envelope(ok=True, command="plan.status", data={"plan": {"id": "plan-contract"}})
         self.assertEqual(envelope["schema_version"], "1")
         self.assertTrue(envelope["ok"])
         self.assertEqual(envelope["command"], "plan.status")
         self.assertEqual(envelope["errors"], [])
+
+    def test_init_preview_is_machine_readable_and_does_not_write(self) -> None:
+        shutil.rmtree(self.root / "docs")
+
+        code, out, err = self.run_cli("init", "--json")
+
+        self.assertEqual(code, 0, err)
+        payload = json.loads(out)
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["command"], "init")
+        result = payload["data"]["init"]
+        self.assertEqual(result["mode"], "preview")
+        self.assertFalse(result["write"])
+        self.assertFalse(result["confirmed"])
+        self.assertEqual(result["active_attractor"]["id"], "attractor-abh-core")
+        write_paths = {item["path"] for item in result["writes"]}
+        self.assertIn(".abh/plans", write_paths)
+        self.assertIn(".abh/attractors/attractor-abh-core.json", write_paths)
+        self.assertIn("docs/index.md", write_paths)
+        self.assertIn("docs/context/source-of-truth.md", write_paths)
+        self.assertIn("docs/architecture/attractors/abh-core-attractor.md", write_paths)
+        self.assertFalse((self.root / ".abh").exists())
+        self.assertFalse((self.root / "docs").exists())
+
+    def test_init_write_requires_confirm(self) -> None:
+        shutil.rmtree(self.root / "docs")
+
+        code, out, err = self.run_cli("init", "--write", "--json")
+
+        self.assertEqual(code, 2)
+        payload = json.loads(out)
+        self.assertFalse(payload["ok"])
+        self.assertIn("--confirm", payload["errors"][0]["message"])
+        self.assertFalse((self.root / ".abh").exists())
+        self.assertFalse((self.root / "docs").exists())
+
+    def test_init_write_confirm_creates_workspace_and_active_attractor(self) -> None:
+        shutil.rmtree(self.root / "docs")
+
+        code, out, err = self.run_cli("init", "--write", "--confirm", "--json")
+
+        self.assertEqual(code, 0, err)
+        payload = json.loads(out)
+        result = payload["data"]["init"]
+        self.assertEqual(result["mode"], "write")
+        self.assertTrue(result["write"])
+        self.assertTrue(result["confirmed"])
+        write_paths = {item["path"] for item in result["writes"]}
+        self.assertIn("docs/index.md", write_paths)
+        self.assertIn(".abh/attractors/attractor-abh-core.json", write_paths)
+        self.assertEqual(result["active_attractor"]["path"], "docs/architecture/attractors/abh-core-attractor.md")
+        self.assertTrue((self.root / ".abh" / "plans").is_dir())
+        self.assertTrue((self.root / ".abh" / "audits").is_dir())
+        self.assertTrue((self.root / ".abh" / "verifications").is_dir())
+        self.assertTrue((self.root / ".abh" / "attractors" / "attractor-abh-core.json").exists())
+        self.assertTrue((self.root / "docs" / "index.md").exists())
+        self.assertTrue((self.root / "docs" / "context" / "source-of-truth.md").exists())
+        self.assertTrue((self.root / "docs" / "requirements").is_dir())
+        self.assertTrue((self.root / "docs" / "requirements" / "README.md").exists())
+        self.assertTrue((self.root / "docs" / "design").is_dir())
+        self.assertTrue((self.root / "docs" / "design" / "README.md").exists())
+
+        code, out, err = self.run_cli("attractor", "active", "--json")
+        self.assertEqual(code, 0, err)
+        self.assertEqual(json.loads(out)["data"]["attractor"]["id"], "attractor-abh-core")
+
+    def test_init_write_confirm_does_not_overwrite_existing_files(self) -> None:
+        (self.root / "README.md").write_text("# Existing README\n", encoding="utf-8")
+        (self.root / "AGENTS.md").write_text("# Existing Agents\n", encoding="utf-8")
+        existing_index = self.root / "docs" / "index.md"
+        existing_index.write_text("# Existing Index\n", encoding="utf-8")
+        existing_attractor = self.root / "docs" / "architecture" / "attractors" / "abh-core-attractor.md"
+        existing_attractor.write_text("# Existing Attractor\n", encoding="utf-8")
+
+        code, out, err = self.run_cli("init", "--write", "--confirm", "--json")
+
+        self.assertEqual(code, 0, err)
+        payload = json.loads(out)
+        skipped_paths = {item["path"] for item in payload["data"]["init"]["skips"]}
+        self.assertIn("README.md", skipped_paths)
+        self.assertIn("AGENTS.md", skipped_paths)
+        self.assertIn("docs/index.md", skipped_paths)
+        self.assertIn("docs/architecture/attractors/abh-core-attractor.md", skipped_paths)
+        self.assertEqual((self.root / "README.md").read_text(encoding="utf-8"), "# Existing README\n")
+        self.assertEqual((self.root / "AGENTS.md").read_text(encoding="utf-8"), "# Existing Agents\n")
+        self.assertEqual(existing_index.read_text(encoding="utf-8"), "# Existing Index\n")
+        self.assertEqual(existing_attractor.read_text(encoding="utf-8"), "# Existing Attractor\n")
+        self.assertTrue((self.root / ".abh" / "attractors" / "attractor-abh-core.json").exists())
 
     def test_attractor_create_active_show_list_and_supersede_json_flow(self) -> None:
         code, out, err = self.run_cli(

@@ -35,6 +35,7 @@ from .core import (
     update_plan_record,
     validate_identifier,
 )
+from .init import run_init
 
 
 def add_json_argument(parser: argparse.ArgumentParser) -> None:
@@ -92,6 +93,12 @@ def abh_error_payload(exc: AbhError) -> dict[str, Any]:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="abh", description="Attractor Before Harness CLI")
     subparsers = parser.add_subparsers(dest="command", required=True)
+
+    init_parser = subparsers.add_parser("init", help="preview or initialize an ABH workspace")
+    init_parser.add_argument("--write", action="store_true", help="write the previewed ABH workspace files")
+    init_parser.add_argument("--confirm", action="store_true", help="confirm init writes")
+    add_json_argument(init_parser)
+    init_parser.set_defaults(handler=handle_init)
 
     plan_parser = subparsers.add_parser("plan", help="manage plans")
     plan_sub = plan_parser.add_subparsers(dest="plan_command", required=True)
@@ -287,6 +294,16 @@ def build_parser() -> argparse.ArgumentParser:
     drift_analyze.set_defaults(handler=handle_drift_analyze)
 
     return parser
+
+
+def handle_init(args: argparse.Namespace) -> int:
+    result = run_init(write=args.write, confirmed=args.confirm)
+    if args.json:
+        print_json_envelope(ok=True, command=command_name(args), data={"init": result})
+        return 0
+    mode = "wrote" if args.write else "preview"
+    print(f"init {mode}: {len(result['writes'])} write(s), {len(result['skips'])} skip(s)")
+    return 0
 
 
 def handle_plan_create(args: argparse.Namespace) -> int:
