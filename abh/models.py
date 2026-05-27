@@ -368,3 +368,68 @@ class PlanRecord:
             updated_at=data.get("updated_at", utc_now()),
             doc_path=data.get("doc_path", ""),
         )
+
+
+@dataclass(slots=True)
+class RoadmapItem:
+    key: str
+    title: str
+    stage: str
+    summary: str = ""
+    attractor: str = ""
+    baseline: str = ""
+    goals: list[str] = field(default_factory=list)
+    non_goals: list[str] = field(default_factory=list)
+    exit_criteria: list[str] = field(default_factory=list)
+    validation_checklist: list[str] = field(default_factory=list)
+    closure_evidence: list[str] = field(default_factory=list)
+    status: str = "queued"
+    plan_id: str | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        data: dict[str, Any] = {
+            "key": self.key,
+            "title": self.title,
+            "stage": self.stage,
+            "summary": self.summary,
+            "attractor": self.attractor,
+            "baseline": self.baseline,
+            "goals": list(self.goals),
+            "non_goals": list(self.non_goals),
+            "exit_criteria": list(self.exit_criteria),
+            "validation_checklist": list(self.validation_checklist),
+            "closure_evidence": list(self.closure_evidence),
+            "status": self.status,
+            "plan_id": self.plan_id,
+        }
+        return data
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "RoadmapItem":
+        return cls(
+            key=data["key"],
+            title=data["title"],
+            stage=data.get("stage", ""),
+            summary=data.get("summary", ""),
+            attractor=data.get("attractor", ""),
+            baseline=data.get("baseline", ""),
+            goals=list(data.get("goals", [])),
+            non_goals=list(data.get("non_goals", [])),
+            exit_criteria=list(data.get("exit_criteria", [])),
+            validation_checklist=list(data.get("validation_checklist", [])),
+            closure_evidence=list(data.get("closure_evidence", [])),
+            status=data.get("status", "queued"),
+            plan_id=data.get("plan_id"),
+        )
+
+
+@dataclass(slots=True)
+class RoadmapQueue:
+    items: list[RoadmapItem] = field(default_factory=list)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {"schema_version": SCHEMA_VERSION, "items": [item.to_dict() for item in self.items]}
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "RoadmapQueue":
+        return cls(items=[RoadmapItem.from_dict(item) for item in data.get("items", [])])
