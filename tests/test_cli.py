@@ -84,6 +84,21 @@ class CliTests(TestCase):
     def test_agent_first_command_contract_describes_existing_agent_commands(self) -> None:
         from abh.commands import command_contract, make_envelope
 
+        hooks_profile = command_contract("hooks.profile")
+        self.assertEqual(hooks_profile.cli_command, "hooks profile")
+        self.assertTrue(hooks_profile.read_only)
+        self.assertEqual(hooks_profile.confirmation, "none")
+        self.assertEqual(hooks_profile.side_effects, [])
+        self.assertEqual(hooks_profile.output_keys, ["profile"])
+
+        hooks_install = command_contract("hooks.install")
+        self.assertEqual(hooks_install.cli_command, "hooks install")
+        self.assertFalse(hooks_install.read_only)
+        self.assertEqual(hooks_install.confirmation, "--write --confirm")
+        self.assertIn("write", hooks_install.input_schema["properties"])
+        self.assertIn("confirm", hooks_install.input_schema["properties"])
+        self.assertTrue(any(".git/hooks/pre-commit" in effect for effect in hooks_install.side_effects))
+
         plan_status = command_contract("plan.status")
         self.assertEqual(plan_status.cli_command, "plan status")
         self.assertEqual(plan_status.mcp_tool, "abh_plan_status")
@@ -262,6 +277,82 @@ class CliTests(TestCase):
         self.assertFalse((self.root / "AGENTS.md").exists())
         self.assertFalse((self.root / "CLAUDE.md").exists())
         self.assertFalse((self.root / ".mcp.json").exists())
+
+    def test_hooks_profile_json_returns_default_guardrail_profile(self) -> None:
+        code, out, err = self.run_cli("hooks", "profile", "--json")
+
+        self.assertEqual(code, 0, err)
+        payload = json.loads(out)
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["command"], "hooks profile")
+        profile = payload["data"]["profile"]
+        self.assertEqual(profile["name"], "default")
+        self.assertEqual(profile["hook"], "pre-commit")
+        self.assertEqual(profile["path"], ".git/hooks/pre-commit")
+        self.assertIn("ABH MANAGED PRE-COMMIT", profile["managed_marker"])
+        self.assertEqual(
+            profile["commands"],
+            ["python3 -m abh doctor", "python3 -m abh roadmap check --json", "git diff --check"],
+        )
+        self.assertIn("plan_doc_sync", profile["invariants"])
+        self.assertEqual(profile["write_policy"]["mode"], "preview_by_default")
+        self.assertFalse((self.root / ".git" / "hooks" / "pre-commit").exists())
+
+    def test_hooks_install_preview_does_not_write_hook(self) -> None:
+        code, out, err = self.run_cli("hooks", "install", "--json")
+
+        self.assertEqual(code, 0, err)
+        payload = json.loads(out)
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["command"], "hooks install")
+        install = payload["data"]["install"]
+        self.assertEqual(install["mode"], "preview")
+        self.assertFalse(install["write"])
+        self.assertFalse(install["confirmed"])
+        self.assertEqual(install["path"], ".git/hooks/pre-commit")
+        self.assertEqual(install["writes"][0]["path"], ".git/hooks/pre-commit")
+        self.assertEqual(install["blockers"], [])
+        self.assertFalse((self.root / ".git" / "hooks" / "pre-commit").exists())
+
+    def test_hooks_install_write_requires_confirm(self) -> None:
+        code, out, err = self.run_cli("hooks", "install", "--write", "--json")
+
+        self.assertEqual(code, 2)
+        payload = json.loads(out)
+        self.assertFalse(payload["ok"])
+        self.assertIn("--confirm", payload["errors"][0]["message"])
+        self.assertFalse((self.root / ".git" / "hooks" / "pre-commit").exists())
+
+    def test_hooks_install_write_confirm_creates_executable_managed_hook(self) -> None:
+        code, out, err = self.run_cli("hooks", "install", "--write", "--confirm", "--json")
+
+        self.assertEqual(code, 0, err)
+        payload = json.loads(out)
+        install = payload["data"]["install"]
+        self.assertEqual(install["mode"], "write")
+        self.assertTrue(install["write"])
+        self.assertTrue(install["confirmed"])
+        hook_path = self.root / ".git" / "hooks" / "pre-commit"
+        self.assertTrue(hook_path.exists())
+        content = hook_path.read_text(encoding="utf-8")
+        self.assertIn("ABH MANAGED PRE-COMMIT", content)
+        self.assertIn("python3 -m abh doctor", content)
+        self.assertIn("python3 -m abh roadmap check --json", content)
+        self.assertIn("git diff --check", content)
+        self.assertTrue(os.access(hook_path, os.X_OK))
+
+    def test_hooks_install_does_not_overwrite_unmanaged_hook(self) -> None:
+        hook_path = self.root / ".git" / "hooks" / "pre-commit"
+        hook_path.parent.mkdir(parents=True, exist_ok=True)
+        hook_path.write_text("#!/bin/sh\necho custom\n", encoding="utf-8")
+
+        code, out, err = self.run_cli("hooks", "install", "--write", "--confirm", "--json")
+
+        self.assertEqual(code, 2)
+        payload = json.loads(out)
+        self.assertFalse(payload["ok"])
+        self.assertIn("existing unmanaged hook", payload["errors"][0]["message"])
+        self.assertEqual(hook_path.read_text(encoding="utf-8"), "#!/bin/sh\necho custom\n")
 
     def test_attractor_create_active_show_list_and_supersede_json_flow(self) -> None:
         code, out, err = self.run_cli(

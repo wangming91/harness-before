@@ -2,7 +2,7 @@
 
 ## 当前阶段
 
-Sprint 28：ABH Init Active Attractor（已完成）
+Sprint 30：Git Hooks Guardrails（已完成）
 
 ## 状态说明
 
@@ -366,3 +366,15 @@ Sprint 28：ABH Init Active Attractor（已完成）
 | S29-003 | 实现 `abh agent setup {codex,claude-code,mcp} --json` | Done | `abh/agent_setup.py`, `abh/cli.py`, `tests/test_cli.py` |
 | S29-004 | 同步 README、roadmap、task-board、Agent Protocol 和 codebase map | Done | `README.md`, `docs/development-roadmap.md`, `docs/task-board.md`, `docs/architecture/agent-protocol.md`, `docs/context/codebase-map.md` |
 | S29-005 | plan-033 验证、独立审计和关闭 | Done | `docs/audits/audit-033-agent-contract-setup.md`, `docs/plans/plan-033-agent-contract-setup.md` |
+
+## Sprint 30
+
+目标：把 `stage4.git-hooks-guardrails` dogfood 成 `plan-034-git-hooks-guardrails`，交付本地 default pre-commit guardrail MVP：可预览、必须确认写入、只管理 ABH 标记 hook，并保护 doctor、roadmap queue 和 diff whitespace 基础不变量。
+
+| ID | 任务 | 状态 | 产出 |
+| --- | --- | --- | --- |
+| S30-001 | materialize Git Hooks Guardrails 计划 | Done | `stage4.git-hooks-guardrails` -> `docs/plans/plan-034-git-hooks-guardrails.md` |
+| S30-002 | 定义 hooks command contract 和红灯测试 | Done | `abh/commands.py`, `tests/test_cli.py` |
+| S30-003 | 实现 `abh hooks profile --json` 和 `abh hooks install` | Done | `abh/hooks.py`, `abh/cli.py`, `tests/test_cli.py` |
+| S30-004 | 同步 README、roadmap、task-board、Agent Protocol 和 codebase map | Done | `README.md`, `docs/development-roadmap.md`, `docs/task-board.md`, `docs/architecture/agent-protocol.md`, `docs/context/codebase-map.md` |
+| S30-005 | plan-034 验证、独立审计和关闭 | Done | `.abh/verifications/ver-4b6212dd48da.json`, `docs/audits/audit-034-git-hooks-guardrails.md`, `docs/plans/plan-034-git-hooks-guardrails.md` |

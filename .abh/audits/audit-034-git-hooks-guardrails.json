@@ -1,0 +1,41 @@
+{
+  "schema_version": "1",
+  "id": "audit-034-git-hooks-guardrails",
+  "plan_id": "plan-034-git-hooks-guardrails",
+  "auditor": "human-independent-review",
+  "scope": "Independent audit of plan-034 Git Hooks Guardrails against plan goals, non-goals, exit criteria, tests, docs, and verification evidence.",
+  "status": "complete",
+  "result": "pass",
+  "rationale": "plan-034 的核心目标已满足：preview 默认不写入，--write 必须搭配 --confirm，非 ABH managed hook 不会被覆盖，managed marker 判断和可执行 hook 写入路径成立，生成 hook 只运行计划内三条轻量门禁。README、roadmap、task-board、Agent Protocol 和 codebase map 没有夸大到 team/strict/release 自动化范围。",
+  "evidence": [
+    "docs/plans/plan-034-git-hooks-guardrails.md",
+    ".abh/verifications/ver-4b6212dd48da.json",
+    "abh/hooks.py",
+    "abh/cli.py",
+    "abh/commands.py",
+    "tests/test_cli.py",
+    "README.md",
+    "docs/development-roadmap.md",
+    "docs/task-board.md",
+    "docs/architecture/agent-protocol.md",
+    "docs/context/codebase-map.md"
+  ],
+  "findings": [
+    {
+      "severity": "Low",
+      "finding": "Confirmation gate error category is broad",
+      "evidence": "python3 -m abh hooks install --write --json 返回结构化 envelope，但 error category 是 system，不是更贴近确认门禁的 validation / business_rule；这是既有 categorize_abh_error() 对 requires --confirm 未分类导致的模式。",
+      "recommendation": "可补一条分类规则或测试，识别 requires --confirm 为确认/校验类错误。"
+    },
+    {
+      "severity": "Low",
+      "finding": "Managed refresh and exact hook command scope are under-tested",
+      "evidence": "现有测试覆盖 profile、preview、confirm gate、成功安装、非托管 hook 保护；但没有单独覆盖已有 ABH managed hook 可刷新和生成 hook 不包含计划外外部命令。",
+      "recommendation": "补充 focused tests：先写入带 ABH MANAGED PRE-COMMIT 的旧 hook 后确认刷新；并断言生成内容的外部命令集合等于三条计划命令。"
+    }
+  ],
+  "follow_ups": [],
+  "created_at": "2026-05-27T16:23:14.598212+00:00",
+  "updated_at": "2026-05-27T16:23:29.910603+00:00",
+  "doc_path": "/Users/cc/ai/harness-before/docs/audits/audit-034-git-hooks-guardrails.md"
+}

@@ -139,6 +139,35 @@ COMMANDS: tuple[CommandContract, ...] = (
         failure_categories=["not_found", "consistency", "system"],
     ),
     CommandContract(
+        id="hooks.profile",
+        cli_command="hooks profile",
+        mcp_tool=None,
+        read_only=True,
+        confirmation="none",
+        side_effects=[],
+        description="Preview the default local ABH hook guardrail profile without modifying repository state.",
+        input_schema=input_schema({}),
+        output_keys=["profile"],
+        failure_categories=["system"],
+    ),
+    CommandContract(
+        id="hooks.install",
+        cli_command="hooks install",
+        mcp_tool=None,
+        read_only=False,
+        confirmation="--write --confirm",
+        side_effects=["write .git/hooks/pre-commit"],
+        description="Install or refresh the managed local ABH pre-commit guardrail hook.",
+        input_schema=input_schema(
+            {
+                "write": bool_property("Write the managed hook file."),
+                "confirm": bool_property("Must be present with --write to permit repository writes."),
+            }
+        ),
+        output_keys=["install"],
+        failure_categories=COMMON_FAILURES,
+    ),
+    CommandContract(
         id="attractor.list",
         cli_command="attractor list",
         mcp_tool="abh_attractor_list",

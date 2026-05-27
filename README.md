@@ -27,6 +27,7 @@
 - `attractor`：管理 active attractor，并在 plan ready 前校验吸引子绑定
 - `roadmap`：维护稳定 roadmap queue，并在 materialize 时分配真实 plan 编号
 - `agent setup`：导出 Codex、Claude Code 和通用 MCP 客户端可读取的只读 setup bundle
+- `hooks`：预览或安装本地 ABH pre-commit guardrail hook
 - `doctor`：检查 `.abh/` JSON 与 `docs/` Markdown 是否保持一致
 
 所有命令把结构化数据写入 `.abh/` 目录（JSON），同时同步生成 `docs/` 下的 Markdown 文档，便于回放、审查和复用。
@@ -115,7 +116,7 @@ python3 -m unittest tests/test_cli.py
 
 项目版本以 `pyproject.toml` 的 `[project].version` 和 `abh.__version__` 为准，两者必须保持一致。README 中声明的新 CLI 能力、安装方式或运行要求发生变化时，必须同步检查版本是否需要提升，并在对应 plan 的 closure evidence 中说明。
 
-当前发布版本为 `0.3.0`，对应阶段 3 Verify Runner：项目已经具备显式 JSON CLI contract、结构化错误输出、只读 MCP Server、受控 MCP 写工具、本地验证执行器、计划更新、验证环境元数据、可信等级、stale 提示、失败分类、原子写和领域模块拆分。当前开发线已经进入阶段 4 Agent-First 吸引子入口层：`plan-031-truth-precedence-and-age-docs` 已完成 AGE owner-doc baseline，`plan-032-abh-init-active-attractor` 已完成 `abh init` 最小初始化切片，`plan-033-agent-contract-setup` 已完成只读 setup export MVP。受控写工具必须显式传入 `confirm=true`，并复用现有 core 规则，不能绕过 plan 状态机、验证记录、审计关闭门禁或 doctor 一致性检查。
+当前发布版本为 `0.3.0`，对应阶段 3 Verify Runner：项目已经具备显式 JSON CLI contract、结构化错误输出、只读 MCP Server、受控 MCP 写工具、本地验证执行器、计划更新、验证环境元数据、可信等级、stale 提示、失败分类、原子写和领域模块拆分。当前开发线已经进入阶段 4 Agent-First 吸引子入口层：`plan-031-truth-precedence-and-age-docs` 已完成 AGE owner-doc baseline，`plan-032-abh-init-active-attractor` 已完成 `abh init` 最小初始化切片，`plan-033-agent-contract-setup` 已完成只读 setup export MVP，`plan-034-git-hooks-guardrails` 已完成本地 hook guardrail MVP。受控写工具必须显式传入 `confirm=true`，并复用现有 core 规则，不能绕过 plan 状态机、验证记录、审计关闭门禁或 doctor 一致性检查。
 
 ## CI 与关闭门禁
 
@@ -364,7 +365,32 @@ abh agent setup mcp --json
 python3 -m abh.mcp_server
 ```
 
-### 15. MCP Server
+### 15. Git Hook Guardrails
+
+阶段 4 的 hook guardrails 提供本地 pre-commit 保护层。默认 profile 是一个轻量 `pre-commit` hook，会运行：
+
+```bash
+python3 -m abh doctor
+python3 -m abh roadmap check --json
+git diff --check
+```
+
+预览不会写入仓库：
+
+```bash
+abh hooks profile --json
+abh hooks install --json
+```
+
+安装必须显式确认：
+
+```bash
+abh hooks install --write --confirm --json
+```
+
+该命令只会创建或刷新带有 `ABH MANAGED PRE-COMMIT` 标记的 `.git/hooks/pre-commit`。如果已有非 ABH 管理的 hook，它会返回 blocker，不会覆盖用户现有脚本。团队策略、远程分发、strict profile 和发布自动化仍是后续阶段范围。
+
+### 16. MCP Server
 
 ABH 提供一个零外部运行时依赖的 MCP stdio Server，供支持 MCP 的 Agent 通过工具协议读取治理状态，并在显式确认后执行受控写操作：
 
@@ -422,10 +448,10 @@ python3 -m abh.mcp_server
 
 - 阶段 3 功能规划已收尾：`plan-016-verify-runner` 至 `plan-025-stage-3-finalization` 构成 v0.3 Verify Runner 里程碑，覆盖本地验证执行、计划更新、验证环境元数据、可信等级、stale 提示、失败分类、原子写和领域模块拆分
 - v0.3.0 发布准备由 `plan-026-v0-3-release-prep` 收口，release notes 见 `docs/releases/v0.3.0.md`
-- 阶段 4 Agent-First 吸引子入口层已启动：`plan-027-stage-4-attractor-entry-plan`、`plan-028-agent-first-command-contract`、`plan-029-attractor-registry`、`plan-030-roadmap-queue-and-plan-numbering`、`plan-031-truth-precedence-and-age-docs`、`plan-032-abh-init-active-attractor` 和 `plan-033-agent-contract-setup` 已完成
+- 阶段 4 Agent-First 吸引子入口层已启动：`plan-027-stage-4-attractor-entry-plan`、`plan-028-agent-first-command-contract`、`plan-029-attractor-registry`、`plan-030-roadmap-queue-and-plan-numbering`、`plan-031-truth-precedence-and-age-docs`、`plan-032-abh-init-active-attractor`、`plan-033-agent-contract-setup` 和 `plan-034-git-hooks-guardrails` 已完成
 - 未来路线图不再为未创建计划预写 `plan-033` 这类具体编号；未 materialize 的事项使用 `.abh/roadmap.json` 中的稳定 key，真实 plan id 只在 `abh roadmap materialize <key>` 时分配
 - 阶段 4 的目标不是普通 onboarding，而是让 Codex、Claude Code 和 MCP 客户端默认通过 JSON/非交互命令进入 active attractor -> plan -> verification -> audit -> memory 的轨迹控制回路；人类主要负责定义吸引子、批准写入和执行独立审计
 - 后续提升漂移分析精度：从关键词匹配升级到更高质量的证据提取
 - 增加 `abh report`，展示计划关闭率、审计驳回率和重复漂移情况
-- 支持 Git hook 集成，在提交前自动验证状态一致性
+- 扩展 Git hook 集成，从当前本地 pre-commit guardrail MVP 演进到团队策略和更多 profile
 - 为验证记录增加更细粒度执行证据，与计划的 closure evidence 形成完整可追溯链路

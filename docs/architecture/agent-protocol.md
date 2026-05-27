@@ -240,6 +240,7 @@ This is the main convenience layer for agents. Agents should not have to memoriz
 - `plan-031-truth-precedence-and-age-docs`: completed; records AGE owner-doc routing and source-of-truth precedence before init consumes them.
 - `plan-032-abh-init-active-attractor`: completed; binds repository initialization to the current active attractor and seeds the baseline `.abh/` layout plus AGE owner docs.
 - `plan-033-agent-contract-setup`: completed; materialized from `stage4.agent-contract-setup` and implemented read-only Codex, Claude Code, and MCP setup bundle export from the shared command contract.
+- `plan-034-git-hooks-guardrails`: completed; materialized from `stage4.git-hooks-guardrails` and implements local hook profile preview plus confirmed managed pre-commit installation.
 
 Current setup export MVP:
 
@@ -247,6 +248,14 @@ Current setup export MVP:
 - `abh agent setup claude-code --json` returns the same payload shape for Claude Code;
 - `abh agent setup mcp --json` returns the same payload shape plus `python3 -m abh.mcp_server` server metadata;
 - setup export is read-only in this slice and must not write `AGENTS.md`, `CLAUDE.md`, MCP config, hooks, or repository files.
+
+Current hook guardrail MVP:
+
+- `abh hooks profile --json` returns the default local `pre-commit` profile, managed marker, commands, invariants, and write policy;
+- `abh hooks install --json` previews the managed `.git/hooks/pre-commit` installation without writing;
+- `abh hooks install --write --confirm --json` writes or refreshes only an ABH-managed hook;
+- unmanaged existing hooks are blockers and must not be overwritten by this MVP;
+- the default hook runs `python3 -m abh doctor`, `python3 -m abh roadmap check --json`, and `git diff --check`.
 
 Roadmap discipline: concrete `plan-NNN-*` ids are facts about plans that already exist. Future work must use stable queue keys such as `stage4.abh-init-active-attractor` until `abh roadmap materialize <key>` allocates the next available plan id.
 

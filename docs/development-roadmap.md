@@ -248,7 +248,7 @@ Sprint 25 已完成 `plan-029-attractor-registry`。`plan-028-agent-first-comman
 
 `plan-015-controlled-mcp-write-tools` 已关闭。阶段 2 Agent Protocol Foundation 已完整完成：核心只读命令具备显式 JSON 输出和结构化错误格式，MCP stdio Server 同时提供只读工具和受控写工具，写工具必须显式 `confirm=true` 并复用现有 ABH 门禁。
 
-最近关闭计划：`plan-033-agent-contract-setup`。这一切片从 queue key `stage4.agent-contract-setup` materialize 而来，已经实现 Codex、Claude Code 和 MCP setup bundle 的只读导出，并保持不写 AGENTS.md、CLAUDE.md、MCP config 或 hooks 的边界。上一项 `plan-032-abh-init-active-attractor` 已完成 `abh init` 最小初始化切片，并消费 `docs/index.md`、`docs/context/`、`docs/requirements/` 和 `docs/design/` 这些 AGE owner-doc baseline。
+最近关闭计划：`plan-034-git-hooks-guardrails`。这一切片从 queue key `stage4.git-hooks-guardrails` materialize 而来，已经交付本地 hook profile 预览和受确认保护的 managed pre-commit 安装，并保持不覆盖非 ABH managed hook 的边界。上一项 `plan-033-agent-contract-setup` 已完成 Codex、Claude Code 和 MCP setup bundle 的只读导出，并保持不写 AGENTS.md、CLAUDE.md、MCP config 或 hooks 的边界。
 
 当前阶段状态：
 
@@ -260,7 +260,7 @@ Sprint 25 已完成 `plan-029-attractor-registry`。`plan-028-agent-first-comman
 - 当前阶段：阶段 3 验证执行器已经具备 v0.3 所需能力，`plan-025-stage-3-finalization` 已留下收尾验证、独立审计和阶段 4 启动证据。
 - 当前阶段 3 判定：完成。v0.3 Verify Runner 里程碑已关闭。
 - 已完成 release-prep：`plan-026-v0-3-release-prep` 已将版本元数据、release notes、验证证据和 tag readiness 对齐到 v0.3.0。
-- 下一阶段焦点：阶段 4 Agent-First 吸引子入口层已从 `plan-027-stage-4-attractor-entry-plan` 启动；`plan-028-agent-first-command-contract`、`plan-029-attractor-registry`、`plan-030-roadmap-queue-and-plan-numbering`、`plan-031-truth-precedence-and-age-docs`、`plan-032-abh-init-active-attractor` 和 `plan-033-agent-contract-setup` 已完成。当前顺序转入 `stage4.git-hooks-guardrails`。
+- 下一阶段焦点：阶段 4 Agent-First 吸引子入口层已从 `plan-027-stage-4-attractor-entry-plan` 启动；`plan-028-agent-first-command-contract`、`plan-029-attractor-registry`、`plan-030-roadmap-queue-and-plan-numbering`、`plan-031-truth-precedence-and-age-docs`、`plan-032-abh-init-active-attractor`、`plan-033-agent-contract-setup` 和 `plan-034-git-hooks-guardrails` 已完成。当前顺序转入 `stage4.abh-next-and-onboarding-check`。
 
 ## 5. 长期阶段线
 
@@ -395,7 +395,7 @@ Sprint 25 已完成 `plan-029-attractor-registry`。`plan-028-agent-first-comman
 - 新增 `abh init`，在任意仓库生成 `.abh/`、`docs/plans/`、`docs/audits/`、`docs/memory/`、AGE owner docs、默认 active attractor、模板和最小 README 片段；初始化结果必须让用户直接进入第一条 plan / verify / audit / close 闭环。
 - 新增 `abh agent setup claude-code --json` 和 `abh agent setup codex --json`，输出对应 Agent 可消费的只读 setup bundle，包括 active attractor、必读 owner docs、ABH 工作流规则、推荐命令和写入边界；这些指令必须写清“先读 active attractor、没有 plan 不开工、verification 不等于完成、close 依赖独立 audit、失败假设写 memory”。
 - 新增 `abh agent setup mcp --json`，输出通用 MCP 客户端可解析的 server 配置和安全说明。`claude-code`、`codex`、`mcp --json` 是同一个 Agent Contract Export 能力的不同出口：前两者面向具体 Agent 产品，后者面向通用协议和机器可读配置；`plan-033` 已完成只读导出，不写 AGENTS.md、CLAUDE.md 或配置片段。后续实际写入必须通过 `--write --confirm` 或等价确认。
-- 新增 `abh hooks install`，提供 `solo`、`team`、`strict` profile；hook 保护 ABH 不变量，例如 commit message 关联 plan、提交前 `abh doctor`、verification stale 提示、closing/closed audit gate，而不是做重型流程管控。
+- 新增 `abh hooks profile --json` 和 `abh hooks install`。`plan-034` 先交付本地 default pre-commit MVP：预览 profile、必须 `--write --confirm` 才安装、只刷新 ABH managed hook、不覆盖用户已有非托管 hook，并运行 `abh doctor`、`abh roadmap check --json` 和 `git diff --check`。`solo`、`team`、`strict` profile 以及 commit message 关联 plan、verification stale 提示、closing/closed audit gate 属于后续增强。
 - 新增 `abh next --json`，作为 Agent 的默认导航入口，根据当前仓库状态返回下一步 ABH 动作、推荐命令、是否需要人类确认和原因，例如补 active attractor、补 exit criteria、运行 verification、request audit、transition closing 或 close。
 - 新增 `abh onboarding check --json`，检查仓库是否 ABH-ready：active attractor、agent 指令、MCP/CLI 可用性、hook 配置、模板和至少一个完整闭环示例。
 - 新增 `docs/quickstart.md` 和 `docs/recipes/`，提供 5 分钟上手路径、Claude Code/Codex 使用配方、MCP 配置示例、Git hook profile 说明和第一个闭环 demo。
@@ -412,7 +412,7 @@ Sprint 25 已完成 `plan-029-attractor-registry`。`plan-028-agent-first-comman
 - `plan-031-truth-precedence-and-age-docs`（已完成）
 - `plan-032-abh-init-active-attractor`（已完成）
 - `plan-033-agent-contract-setup`（已完成）
-- `stage4.git-hooks-guardrails`
+- `plan-034-git-hooks-guardrails`（已完成）
 - `stage4.abh-next-and-onboarding-check`
 - `stage4.quickstart-recipes-and-distribution`
 
@@ -493,14 +493,14 @@ Roadmap queue 规则：
 | 阶段 1：恢复权威基线，稳住内核 | `plan-006-stabilize`, `plan-007-zero-dep-install`, `plan-008-roadmap-sync-and-doctor`, `plan-009-roadmap-phase-alignment`, `plan-010-core-governance-hardening`, `plan-011-stage-1-finalization` | 历史计划迁移、安装门槛降低、`abh doctor`、路线图对齐、demo 清理、schema version、历史 schema 迁移、CI、版本策略 | 已完成；内容级 doctor、发布自动化转入后续质量/发布计划 |
 | 阶段 2：Agent Protocol 基础 | `plan-012-agent-protocol-foundation`, `plan-013-json-output-and-errors`, `plan-014-readonly-mcp-server`, `plan-015-controlled-mcp-write-tools` | Agent Protocol 五层基线、阶段路线、核心只读命令 `--json`、统一 JSON envelope、结构化 ABH 错误、只读 MCP stdio Server、受控 MCP 写工具 | 已完成；verify runner 已进入阶段 3，Attractor Registry 并入阶段 4 吸引子入口层 |
 | 阶段 3：验证执行器 | `plan-002-sprint-2-local-plan-loop`, `plan-016-verify-runner`, `plan-017-plan-update`, `plan-018-core-module-split`, `plan-019-verification-environment-metadata`, `plan-020-stage-3-functional-plan`, `plan-021-verification-trust-and-stale-detection`, `plan-022-verification-failure-classification`, `plan-023-atomic-abh-writes`, `plan-024-memory-drift-routing-module-split`, `plan-025-stage-3-finalization`, `plan-026-v0-3-release-prep` | `verify record` 可记录验证结果；`verify run` 可执行 validation checklist、记录机器证据、失败阻断计划并支持 JSON 输出；`plan update` 可通过 CLI 双写追加计划字段并精确修复 validation checklist；`core.py` 已拆出 plan/audit/verification/errors/memory/drift/routing 领域模块并保持兼容导出；environment 元数据已补充 cwd、git、版本、timeout、argv 和 allowlisted env 证据；trust level、stale summary 和失败分类已落盘并暴露给审计；`.abh` JSON 与 Markdown 保存路径已补充原子写和本地文件锁；阶段 3 已通过 `plan-025` 收尾为 v0.3 Verify Runner 里程碑，并通过 `plan-026` 对齐 v0.3.0 release metadata 与 release notes | 已完成；Agent-First 吸引子入口层成为下一阶段最高优先级 |
-| 阶段 4：Agent-First 吸引子入口层 | `plan-001-sprint-1-foundation`, `plan-007-zero-dep-install`, `plan-027-stage-4-attractor-entry-plan`, `plan-028-agent-first-command-contract`, `plan-029-attractor-registry`, `plan-030-roadmap-queue-and-plan-numbering`, `plan-031-truth-precedence-and-age-docs`, `plan-032-abh-init-active-attractor`, `plan-033-agent-contract-setup` | active attractor 文档和模板；uvx/uv tool install 降低接入门槛；Stage 4 已校准为 Agent-First 吸引子入口层；`abh.commands` 已承载共享命令契约、JSON envelope、MCP tool metadata、side effects 和 confirmation boundary；MCP `abh_plan_status` 已与 CLI `plan status --json` 对齐；Attractor Registry 已把 active attractor 升级为 CLI/MCP 可读对象并接入 ready plan 校验；roadmap queue 已避免未来编号漂移；AGE owner-doc baseline 已定义 docs 路由、context 和 truth precedence；`abh init` 已提供 JSON preview、`--write --confirm` 写入边界、默认 active attractor 和 owner-doc 初始化；Agent Contract Export 已实现 Codex、Claude Code 和 MCP 的只读 setup bundle | Git hooks、`abh next --json`、onboarding check、quickstart/recipes、PyPI/uvx abh、完整 demo |
+| 阶段 4：Agent-First 吸引子入口层 | `plan-001-sprint-1-foundation`, `plan-007-zero-dep-install`, `plan-027-stage-4-attractor-entry-plan`, `plan-028-agent-first-command-contract`, `plan-029-attractor-registry`, `plan-030-roadmap-queue-and-plan-numbering`, `plan-031-truth-precedence-and-age-docs`, `plan-032-abh-init-active-attractor`, `plan-033-agent-contract-setup`, `plan-034-git-hooks-guardrails` | active attractor 文档和模板；uvx/uv tool install 降低接入门槛；Stage 4 已校准为 Agent-First 吸引子入口层；`abh.commands` 已承载共享命令契约、JSON envelope、MCP tool metadata、side effects 和 confirmation boundary；MCP `abh_plan_status` 已与 CLI `plan status --json` 对齐；Attractor Registry 已把 active attractor 升级为 CLI/MCP 可读对象并接入 ready plan 校验；roadmap queue 已避免未来编号漂移；AGE owner-doc baseline 已定义 docs 路由、context 和 truth precedence；`abh init` 已提供 JSON preview、`--write --confirm` 写入边界、默认 active attractor 和 owner-doc 初始化；Agent Contract Export 已实现 Codex、Claude Code 和 MCP 的只读 setup bundle；Git Hooks Guardrails 已交付本地 default pre-commit MVP | `abh next --json`、onboarding check、quickstart/recipes、PyPI/uvx abh、完整 demo、团队级 hook/profile 策略 |
 | 阶段 5：真正独立审计 | `plan-003-sprint-3-audit-memory-close`, `plan-007-zero-dep-install`, `plan-008-roadmap-sync-and-doctor` | audit request/record/close 闭环，人工独立审计流程已 dogfood | audit prompt/bundle、独立上下文字段、关闭门禁 |
 | 阶段 6：漂移与记忆质量提升 | `plan-004-sprint-4-route-drift`, `plan-007-sprint-7-dogfood` | 关键词 drift、route 注入活跃计划和记忆 | severity/confidence、memory 索引、对象图路由、report |
 | 阶段 7：团队可用与生态集成 | `plan-007-zero-dep-install` | uvx/uv tool install 降低接入门槛 | CI 模板、多仓库、团队策略、发布自动化 |
 
 ## 7. 下一批推荐计划
 
-本节只列下一批仍可切分执行的计划。已关闭的 `plan-012-agent-protocol-foundation`、`plan-013-json-output-and-errors`、`plan-014-readonly-mcp-server`、`plan-015-controlled-mcp-write-tools`、阶段 3 的 `plan-016` 至 `plan-025`、release-prep 的 `plan-026-v0-3-release-prep`、Stage 4 入口校准的 `plan-027-stage-4-attractor-entry-plan`、共享命令契约的 `plan-028-agent-first-command-contract`、active attractor registry 的 `plan-029-attractor-registry`、roadmap queue 的 `plan-030-roadmap-queue-and-plan-numbering`、AGE owner-doc baseline 的 `plan-031-truth-precedence-and-age-docs`、init 切片的 `plan-032-abh-init-active-attractor` 和 setup export 切片的 `plan-033-agent-contract-setup` 已归入第 3 章历史执行线与第 6 章阶段映射；当前下一项是 queue key `stage4.git-hooks-guardrails`。未来事项的事实来源是 `.abh/roadmap.json`，文档中不再为未 materialize 项预写具体 plan 编号。
+本节只列下一批仍可切分执行的计划。已关闭的 `plan-012-agent-protocol-foundation`、`plan-013-json-output-and-errors`、`plan-014-readonly-mcp-server`、`plan-015-controlled-mcp-write-tools`、阶段 3 的 `plan-016` 至 `plan-025`、release-prep 的 `plan-026-v0-3-release-prep`、Stage 4 入口校准的 `plan-027-stage-4-attractor-entry-plan`、共享命令契约的 `plan-028-agent-first-command-contract`、active attractor registry 的 `plan-029-attractor-registry`、roadmap queue 的 `plan-030-roadmap-queue-and-plan-numbering`、AGE owner-doc baseline 的 `plan-031-truth-precedence-and-age-docs`、init 切片的 `plan-032-abh-init-active-attractor`、setup export 切片的 `plan-033-agent-contract-setup` 和 hooks guardrails 切片的 `plan-034-git-hooks-guardrails` 已归入第 3 章历史执行线与第 6 章阶段映射；当前下一项是 queue key `stage4.abh-next-and-onboarding-check`。未来事项的事实来源是 `.abh/roadmap.json`，文档中不再为未 materialize 项预写具体 plan 编号。
 
 已完成参考：
 

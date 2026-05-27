@@ -6,6 +6,7 @@ from typing import Any
 
 from .commands import dumps_envelope, make_envelope
 from .agent_setup import agent_setup_bundle
+from .hooks import hook_profile, install_hooks
 from .core import (
     AbhError,
     add_memory,
@@ -55,6 +56,7 @@ def command_name(args: argparse.Namespace) -> str:
         "roadmap_command",
         "agent_command",
         "agent_setup_command",
+        "hooks_command",
     ):
         value = getattr(args, attr, None)
         if value:
@@ -112,6 +114,19 @@ def build_parser() -> argparse.ArgumentParser:
         setup_target = agent_setup_sub.add_parser(target, help=f"export {target} setup bundle")
         add_json_argument(setup_target)
         setup_target.set_defaults(handler=handle_agent_setup)
+
+    hooks_parser = subparsers.add_parser("hooks", help="inspect or install local ABH hook guardrails")
+    hooks_sub = hooks_parser.add_subparsers(dest="hooks_command", required=True)
+
+    hooks_profile_parser = hooks_sub.add_parser("profile", help="preview the default hook guardrail profile")
+    add_json_argument(hooks_profile_parser)
+    hooks_profile_parser.set_defaults(handler=handle_hooks_profile)
+
+    hooks_install_parser = hooks_sub.add_parser("install", help="preview or install managed ABH hook guardrails")
+    hooks_install_parser.add_argument("--write", action="store_true", help="write the managed hook file")
+    hooks_install_parser.add_argument("--confirm", action="store_true", help="confirm hook writes")
+    add_json_argument(hooks_install_parser)
+    hooks_install_parser.set_defaults(handler=handle_hooks_install)
 
     plan_parser = subparsers.add_parser("plan", help="manage plans")
     plan_sub = plan_parser.add_subparsers(dest="plan_command", required=True)
@@ -325,6 +340,25 @@ def handle_agent_setup(args: argparse.Namespace) -> int:
         print_json_envelope(ok=True, command=command_name(args), data={"setup": setup})
         return 0
     print(f"agent setup {setup['agent']}: read-only bundle")
+    return 0
+
+
+def handle_hooks_profile(args: argparse.Namespace) -> int:
+    profile = hook_profile()
+    if args.json:
+        print_json_envelope(ok=True, command=command_name(args), data={"profile": profile})
+        return 0
+    print(f"hooks profile {profile['name']}: {profile['path']}")
+    return 0
+
+
+def handle_hooks_install(args: argparse.Namespace) -> int:
+    result = install_hooks(write=args.write, confirmed=args.confirm)
+    if args.json:
+        print_json_envelope(ok=True, command=command_name(args), data={"install": result})
+        return 0
+    mode = "wrote" if args.write else "preview"
+    print(f"hooks install {mode}: {len(result['writes'])} write(s), {len(result['blockers'])} blocker(s)")
     return 0
 
 
