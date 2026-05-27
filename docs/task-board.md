@@ -354,3 +354,15 @@ Sprint 28：ABH Init Active Attractor（已完成）
 | S28-003 | 实现初始化写入与不覆盖保护 | Done | `abh/init.py`, `tests/test_cli.py` |
 | S28-004 | 同步 README、roadmap、阶段规划和 Agent Protocol | Done | `README.md`, `docs/development-roadmap.md`, `docs/阶段规划.md`, `docs/architecture/agent-protocol.md` |
 | S28-005 | plan-032 验证、独立审计和关闭 | Done | `.abh/verifications/ver-1e9ba9045ad4.json`, `docs/audits/audit-032-abh-init-active-attractor.md` |
+
+## Sprint 29
+
+目标：把 `stage4.agent-contract-setup` dogfood 成 `plan-033-agent-contract-setup`，导出 Codex、Claude Code 和通用 MCP 客户端可读取的只读 setup bundle，并明确当前切片不写 agent 配置文件。
+
+| ID | 任务 | 状态 | 产出 |
+| --- | --- | --- | --- |
+| S29-001 | materialize Agent Contract Setup 计划 | Done | `stage4.agent-contract-setup` -> `docs/plans/plan-033-agent-contract-setup.md` |
+| S29-002 | 定义 agent setup command contract 和红灯测试 | Done | `abh/commands.py`, `tests/test_cli.py` |
+| S29-003 | 实现 `abh agent setup {codex,claude-code,mcp} --json` | Done | `abh/agent_setup.py`, `abh/cli.py`, `tests/test_cli.py` |
+| S29-004 | 同步 README、roadmap、task-board、Agent Protocol 和 codebase map | Done | `README.md`, `docs/development-roadmap.md`, `docs/task-board.md`, `docs/architecture/agent-protocol.md`, `docs/context/codebase-map.md` |
+| S29-005 | plan-033 验证、独立审计和关闭 | Done | `docs/audits/audit-033-agent-contract-setup.md`, `docs/plans/plan-033-agent-contract-setup.md` |

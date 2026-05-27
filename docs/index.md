@@ -32,4 +32,4 @@ ABH adopts the AGE distinction between stable attractors and control mechanisms:
 - Stable owner docs: `docs/context/`, `docs/requirements/`, `docs/design/`, `docs/architecture/`.
 - Control records: `docs/plans/`, `docs/audits/`, `docs/memory/`, `docs/drift/`, future `docs/logs/`.
 
-Future `abh init`, `abh agent setup`, `abh next`, and `abh onboarding check` should consume this index rather than inventing separate reading-order rules.
+`abh init` seeds this index in new workspaces. `abh agent setup` consumes it when exporting setup bundles. Future `abh next` and `abh onboarding check` should also consume this index rather than inventing separate reading-order rules.

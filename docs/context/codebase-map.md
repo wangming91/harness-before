@@ -4,6 +4,7 @@
 
 - `abh/cli.py` — argparse CLI adapter and human/JSON output handlers.
 - `abh/commands.py` — Agent-First command contract, JSON envelope helpers, MCP tool metadata.
+- `abh/agent_setup.py` — read-only setup bundle export for Codex, Claude Code, and generic MCP clients.
 - `abh/init.py` — `abh init` preview/write planning, AGE owner-doc templates, and default active attractor seeding.
 - `abh/models.py` — schema-versioned records for attractors, plans, verifications, audits, memory, drift, and roadmap queue items.
 - `abh/storage.py` — path helpers, workspace directories, atomic text/JSON writes, and local file locks.
@@ -28,6 +29,7 @@
 ## Primary Command Families
 
 - `abh attractor ...`
+- `abh agent setup ...`
 - `abh init`
 - `abh plan ...`
 - `abh verify ...`
@@ -39,4 +41,4 @@
 - `abh route ...`
 - `abh doctor`
 
-Future Stage 4 command families should extend `abh.commands` before or alongside their CLI/MCP adapters.
+Future Stage 4 command families should extend `abh.commands` before or alongside their CLI/MCP adapters. `agent setup` is currently a read-only export surface; write/install behavior for agent config files remains a later confirmed-write slice.

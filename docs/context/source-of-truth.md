@@ -28,9 +28,9 @@ Repository files are the truth surface, but no single file answers every questio
 - Audit and implementation claim disagree: audit wins for closure, but findings must cite repository evidence.
 - Memory and current facts disagree: deprecate or supersede the memory record; do not delete historical evidence casually.
 
-## Future AGE Layers
+## AGE Layers
 
-`abh init` should seed these source layers in new repositories:
+`abh init` seeds these source layers in new repositories, and `abh agent setup` reads them into setup bundles:
 
 - `docs/context/` for Agent-readable repository context and precedence
 - `docs/requirements/` for implementation-ready requirements

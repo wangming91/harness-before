@@ -1,0 +1,89 @@
+{
+  "schema_version": "1",
+  "id": "ver-442291d3dee0",
+  "plan_id": "plan-033-agent-contract-setup",
+  "command": "python3 -m unittest tests/test_cli.py -v && python3 -m abh doctor && git diff --check && python3 -m abh roadmap check --json",
+  "result": "pass",
+  "artifacts": [
+    "command='python3 -m unittest tests/test_cli.py -v'; exit_code=0; duration_seconds=2.110; stdout=''; stderr='test_abh_error_json_returns_structured_error (tests.test_cli.CliTests.test_abh_error_json_returns_structured_error) ... ok\\\\ntest_agent_first_command_contract_describes_existing_agent_commands (tests.test_cli.CliTests.test_agent_first_command_contract_describes_existing_agent_commands) ... ok\\\\ntest_agent_setup_codex_json_returns_readonly_bundle (tests.test_cli.CliTests.test_agent_setup_codex_json_returns_readonly_bundle) ... ok\\\\ntest_agent_setup_targets_share_shape_and_mcp_includes_server_command'",
+    "command='python3 -m abh doctor'; exit_code=0; duration_seconds=0.048; stdout='doctor: ok'; stderr=''",
+    "command='git diff --check'; exit_code=0; duration_seconds=0.013; stdout=''; stderr=''",
+    "command='python3 -m abh roadmap check --json'; exit_code=0; duration_seconds=0.040; stdout='{\"schema_version\": \"1\", \"ok\": true, \"command\": \"roadmap check\", \"data\": {\"issues\": []}, \"errors\": [], \"warnings\": []}'; stderr=''"
+  ],
+  "failed_checks": [],
+  "failure_classifications": [],
+  "environment": {
+    "cwd": "/Users/cc/ai/harness-before",
+    "git": {
+      "commit": "6a39e23e26bad4f2af97406bbd7306b99a7a9358",
+      "dirty": true,
+      "status_hash": "aa5169fa1cdf384e6b0c17f895b4d347e5baefb85dc16cd3cf1feded1bd306ed",
+      "available": true
+    },
+    "abh": {
+      "version": "0.3.0"
+    },
+    "python": {
+      "version": "3.13.3 (main, Jan 27 2026, 20:15:53) [Clang 17.0.0 (clang-1700.6.3.2)]",
+      "executable": "/Users/cc/.pyenv/versions/3.13.3/bin/python3"
+    },
+    "runner": {
+      "timeout_seconds": 120,
+      "shell": true,
+      "check_count": 4
+    },
+    "commands": [
+      {
+        "command": "python3 -m unittest tests/test_cli.py -v",
+        "argv": [
+          "python3",
+          "-m",
+          "unittest",
+          "tests/test_cli.py",
+          "-v"
+        ]
+      },
+      {
+        "command": "python3 -m abh doctor",
+        "argv": [
+          "python3",
+          "-m",
+          "abh",
+          "doctor"
+        ]
+      },
+      {
+        "command": "git diff --check",
+        "argv": [
+          "git",
+          "diff",
+          "--check"
+        ]
+      },
+      {
+        "command": "python3 -m abh roadmap check --json",
+        "argv": [
+          "python3",
+          "-m",
+          "abh",
+          "roadmap",
+          "check",
+          "--json"
+        ]
+      }
+    ],
+    "environment_variables": {},
+    "plan": {
+      "updated_at": "2026-05-27T14:37:32.252101+00:00",
+      "content_hash": "36ba7c4df0c79a79809de181f512ae3df5cacf7730ec947ce69c4d1b4f4b51e8",
+      "validation_checklist": [
+        "python3 -m unittest tests/test_cli.py -v",
+        "python3 -m abh doctor",
+        "git diff --check",
+        "python3 -m abh roadmap check --json"
+      ]
+    }
+  },
+  "trust_level": "local_shell",
+  "created_at": "2026-05-27T14:40:27.393697+00:00"
+}

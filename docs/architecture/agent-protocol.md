@@ -239,7 +239,14 @@ This is the main convenience layer for agents. Agents should not have to memoriz
 - `plan-030-roadmap-queue-and-plan-numbering`: completed; prevents future roadmap inserts from forcing mass renumbering by introducing stable roadmap keys and materialized plan id allocation.
 - `plan-031-truth-precedence-and-age-docs`: completed; records AGE owner-doc routing and source-of-truth precedence before init consumes them.
 - `plan-032-abh-init-active-attractor`: completed; binds repository initialization to the current active attractor and seeds the baseline `.abh/` layout plus AGE owner docs.
-- `stage4.agent-contract-setup`: next Stage 4 implementation item in the roadmap queue; when materialized, it should export Claude Code, Codex, and MCP setup bundles from the shared command contract.
+- `plan-033-agent-contract-setup`: completed; materialized from `stage4.agent-contract-setup` and implemented read-only Codex, Claude Code, and MCP setup bundle export from the shared command contract.
+
+Current setup export MVP:
+
+- `abh agent setup codex --json` returns a `setup` payload for Codex project instructions;
+- `abh agent setup claude-code --json` returns the same payload shape for Claude Code;
+- `abh agent setup mcp --json` returns the same payload shape plus `python3 -m abh.mcp_server` server metadata;
+- setup export is read-only in this slice and must not write `AGENTS.md`, `CLAUDE.md`, MCP config, hooks, or repository files.
 
 Roadmap discipline: concrete `plan-NNN-*` ids are facts about plans that already exist. Future work must use stable queue keys such as `stage4.abh-init-active-attractor` until `abh roadmap materialize <key>` allocates the next available plan id.
 

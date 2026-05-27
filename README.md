@@ -26,6 +26,7 @@
 - `drift`：识别基础漂移并生成漂移报告（支持以计划为基准）
 - `attractor`：管理 active attractor，并在 plan ready 前校验吸引子绑定
 - `roadmap`：维护稳定 roadmap queue，并在 materialize 时分配真实 plan 编号
+- `agent setup`：导出 Codex、Claude Code 和通用 MCP 客户端可读取的只读 setup bundle
 - `doctor`：检查 `.abh/` JSON 与 `docs/` Markdown 是否保持一致
 
 所有命令把结构化数据写入 `.abh/` 目录（JSON），同时同步生成 `docs/` 下的 Markdown 文档，便于回放、审查和复用。
@@ -114,7 +115,7 @@ python3 -m unittest tests/test_cli.py
 
 项目版本以 `pyproject.toml` 的 `[project].version` 和 `abh.__version__` 为准，两者必须保持一致。README 中声明的新 CLI 能力、安装方式或运行要求发生变化时，必须同步检查版本是否需要提升，并在对应 plan 的 closure evidence 中说明。
 
-当前发布版本为 `0.3.0`，对应阶段 3 Verify Runner：项目已经具备显式 JSON CLI contract、结构化错误输出、只读 MCP Server、受控 MCP 写工具、本地验证执行器、计划更新、验证环境元数据、可信等级、stale 提示、失败分类、原子写和领域模块拆分。当前开发线已经进入阶段 4 Agent-First 吸引子入口层：`plan-031-truth-precedence-and-age-docs` 已完成 AGE owner-doc baseline，`plan-032-abh-init-active-attractor` 已完成 `abh init` 最小初始化切片。受控写工具必须显式传入 `confirm=true`，并复用现有 core 规则，不能绕过 plan 状态机、验证记录、审计关闭门禁或 doctor 一致性检查。
+当前发布版本为 `0.3.0`，对应阶段 3 Verify Runner：项目已经具备显式 JSON CLI contract、结构化错误输出、只读 MCP Server、受控 MCP 写工具、本地验证执行器、计划更新、验证环境元数据、可信等级、stale 提示、失败分类、原子写和领域模块拆分。当前开发线已经进入阶段 4 Agent-First 吸引子入口层：`plan-031-truth-precedence-and-age-docs` 已完成 AGE owner-doc baseline，`plan-032-abh-init-active-attractor` 已完成 `abh init` 最小初始化切片，`plan-033-agent-contract-setup` 已完成只读 setup export MVP。受控写工具必须显式传入 `confirm=true`，并复用现有 core 规则，不能绕过 plan 状态机、验证记录、审计关闭门禁或 doctor 一致性检查。
 
 ## CI 与关闭门禁
 
@@ -347,7 +348,23 @@ abh doctor --json
 
 JSON envelope 包含 `schema_version`、`ok`、`command`、`data`、`errors` 和 `warnings`。当 ABH 业务错误发生时，`--json` 模式会把错误写入 `errors`，并保留现有返回码语义。
 
-### 14. MCP Server
+### 14. Agent Setup Export
+
+阶段 4 开始，ABH 可以导出面向具体 Agent 或通用 MCP 客户端的只读 setup bundle。该命令读取 active attractor、AGE owner docs 和共享命令契约，只输出推荐阅读、工作流规则、推荐命令和写入边界；当前切片不会写入 `AGENTS.md`、`CLAUDE.md`、MCP 配置或 hooks。
+
+```bash
+abh agent setup codex --json
+abh agent setup claude-code --json
+abh agent setup mcp --json
+```
+
+`mcp` 目标会包含当前 MCP server 启动命令：
+
+```bash
+python3 -m abh.mcp_server
+```
+
+### 15. MCP Server
 
 ABH 提供一个零外部运行时依赖的 MCP stdio Server，供支持 MCP 的 Agent 通过工具协议读取治理状态，并在显式确认后执行受控写操作：
 
@@ -405,7 +422,7 @@ python3 -m abh.mcp_server
 
 - 阶段 3 功能规划已收尾：`plan-016-verify-runner` 至 `plan-025-stage-3-finalization` 构成 v0.3 Verify Runner 里程碑，覆盖本地验证执行、计划更新、验证环境元数据、可信等级、stale 提示、失败分类、原子写和领域模块拆分
 - v0.3.0 发布准备由 `plan-026-v0-3-release-prep` 收口，release notes 见 `docs/releases/v0.3.0.md`
-- 阶段 4 Agent-First 吸引子入口层已启动：`plan-027-stage-4-attractor-entry-plan`、`plan-028-agent-first-command-contract`、`plan-029-attractor-registry`、`plan-030-roadmap-queue-and-plan-numbering`、`plan-031-truth-precedence-and-age-docs` 和 `plan-032-abh-init-active-attractor` 已完成；下一项是 `stage4.agent-contract-setup`
+- 阶段 4 Agent-First 吸引子入口层已启动：`plan-027-stage-4-attractor-entry-plan`、`plan-028-agent-first-command-contract`、`plan-029-attractor-registry`、`plan-030-roadmap-queue-and-plan-numbering`、`plan-031-truth-precedence-and-age-docs`、`plan-032-abh-init-active-attractor` 和 `plan-033-agent-contract-setup` 已完成
 - 未来路线图不再为未创建计划预写 `plan-033` 这类具体编号；未 materialize 的事项使用 `.abh/roadmap.json` 中的稳定 key，真实 plan id 只在 `abh roadmap materialize <key>` 时分配
 - 阶段 4 的目标不是普通 onboarding，而是让 Codex、Claude Code 和 MCP 客户端默认通过 JSON/非交互命令进入 active attractor -> plan -> verification -> audit -> memory 的轨迹控制回路；人类主要负责定义吸引子、批准写入和执行独立审计
 - 后续提升漂移分析精度：从关键词匹配升级到更高质量的证据提取

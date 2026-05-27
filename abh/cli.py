@@ -5,6 +5,7 @@ import sys
 from typing import Any
 
 from .commands import dumps_envelope, make_envelope
+from .agent_setup import agent_setup_bundle
 from .core import (
     AbhError,
     add_memory,
@@ -52,6 +53,8 @@ def command_name(args: argparse.Namespace) -> str:
         "drift_command",
         "attractor_command",
         "roadmap_command",
+        "agent_command",
+        "agent_setup_command",
     ):
         value = getattr(args, attr, None)
         if value:
@@ -99,6 +102,16 @@ def build_parser() -> argparse.ArgumentParser:
     init_parser.add_argument("--confirm", action="store_true", help="confirm init writes")
     add_json_argument(init_parser)
     init_parser.set_defaults(handler=handle_init)
+
+    agent_parser = subparsers.add_parser("agent", help="export agent setup bundles")
+    agent_sub = agent_parser.add_subparsers(dest="agent_command", required=True)
+
+    agent_setup = agent_sub.add_parser("setup", help="export read-only setup bundle")
+    agent_setup_sub = agent_setup.add_subparsers(dest="agent_setup_command", required=True)
+    for target in ("codex", "claude-code", "mcp"):
+        setup_target = agent_setup_sub.add_parser(target, help=f"export {target} setup bundle")
+        add_json_argument(setup_target)
+        setup_target.set_defaults(handler=handle_agent_setup)
 
     plan_parser = subparsers.add_parser("plan", help="manage plans")
     plan_sub = plan_parser.add_subparsers(dest="plan_command", required=True)
@@ -303,6 +316,15 @@ def handle_init(args: argparse.Namespace) -> int:
         return 0
     mode = "wrote" if args.write else "preview"
     print(f"init {mode}: {len(result['writes'])} write(s), {len(result['skips'])} skip(s)")
+    return 0
+
+
+def handle_agent_setup(args: argparse.Namespace) -> int:
+    setup = agent_setup_bundle(args.agent_setup_command)
+    if args.json:
+        print_json_envelope(ok=True, command=command_name(args), data={"setup": setup})
+        return 0
+    print(f"agent setup {setup['agent']}: read-only bundle")
     return 0
 
 

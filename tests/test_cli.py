@@ -108,6 +108,19 @@ class CliTests(TestCase):
         self.assertIn("confirm", init_workspace.input_schema["properties"])
         self.assertTrue(any("docs/index.md" in effect for effect in init_workspace.side_effects))
 
+        for command_id, cli_command in (
+            ("agent.setup.codex", "agent setup codex"),
+            ("agent.setup.claude_code", "agent setup claude-code"),
+            ("agent.setup.mcp", "agent setup mcp"),
+        ):
+            with self.subTest(command_id=command_id):
+                contract = command_contract(command_id)
+                self.assertEqual(contract.cli_command, cli_command)
+                self.assertTrue(contract.read_only)
+                self.assertEqual(contract.confirmation, "none")
+                self.assertEqual(contract.side_effects, [])
+                self.assertEqual(contract.output_keys, ["setup"])
+
         envelope = make_envelope(ok=True, command="plan.status", data={"plan": {"id": "plan-contract"}})
         self.assertEqual(envelope["schema_version"], "1")
         self.assertTrue(envelope["ok"])
@@ -201,6 +214,54 @@ class CliTests(TestCase):
         self.assertEqual(existing_index.read_text(encoding="utf-8"), "# Existing Index\n")
         self.assertEqual(existing_attractor.read_text(encoding="utf-8"), "# Existing Attractor\n")
         self.assertTrue((self.root / ".abh" / "attractors" / "attractor-abh-core.json").exists())
+
+    def test_agent_setup_codex_json_returns_readonly_bundle(self) -> None:
+        self.run_cli("init", "--write", "--confirm", "--json")
+
+        code, out, err = self.run_cli("agent", "setup", "codex", "--json")
+
+        self.assertEqual(code, 0, err)
+        self.assertEqual(err, "")
+        payload = json.loads(out)
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["command"], "agent setup codex")
+        setup = payload["data"]["setup"]
+        self.assertEqual(setup["agent"], "codex")
+        self.assertEqual(setup["active_attractor"]["id"], "attractor-abh-core")
+        self.assertEqual(setup["active_attractor"]["path"], "docs/architecture/attractors/abh-core-attractor.md")
+        self.assertIn("docs/index.md", setup["required_reading"])
+        self.assertIn("docs/context/source-of-truth.md", setup["required_reading"])
+        self.assertIn("docs/architecture/agent-protocol.md", setup["required_reading"])
+        self.assertIn("verification is evidence, not completion", setup["workflow_rules"])
+        self.assertIn("abh attractor active --json", setup["commands"])
+        self.assertEqual(setup["write_policy"]["mode"], "read_only")
+        self.assertEqual(setup["write_policy"]["writes"], [])
+        self.assertFalse((self.root / "AGENTS.md").exists())
+        self.assertFalse((self.root / "CLAUDE.md").exists())
+
+    def test_agent_setup_targets_share_shape_and_mcp_includes_server_command(self) -> None:
+        self.run_cli("init", "--write", "--confirm", "--json")
+
+        for target in ("claude-code", "mcp"):
+            with self.subTest(target=target):
+                code, out, err = self.run_cli("agent", "setup", target, "--json")
+                self.assertEqual(code, 0, err)
+                payload = json.loads(out)
+                self.assertTrue(payload["ok"])
+                self.assertEqual(payload["command"], f"agent setup {target}")
+                setup = payload["data"]["setup"]
+                self.assertEqual(setup["agent"], target)
+                self.assertIn("active_attractor", setup)
+                self.assertIn("required_reading", setup)
+                self.assertIn("workflow_rules", setup)
+                self.assertIn("commands", setup)
+                self.assertEqual(setup["write_policy"]["mode"], "read_only")
+
+        mcp_setup = json.loads(self.run_cli("agent", "setup", "mcp", "--json")[1])["data"]["setup"]
+        self.assertEqual(mcp_setup["server"]["command"], "python3 -m abh.mcp_server")
+        self.assertFalse((self.root / "AGENTS.md").exists())
+        self.assertFalse((self.root / "CLAUDE.md").exists())
+        self.assertFalse((self.root / ".mcp.json").exists())
 
     def test_attractor_create_active_show_list_and_supersede_json_flow(self) -> None:
         code, out, err = self.run_cli(
@@ -1803,6 +1864,7 @@ class CliTests(TestCase):
         self.assertFalse(path.with_suffix(path.suffix + ".lock").exists())
 
     def test_core_read_commands_support_json_output(self) -> None:
+        self.run_cli("init", "--write", "--confirm", "--json")
         self.create_ready_plan("plan-json-contract")
         self.run_cli(
             "audit", "request",
@@ -1830,6 +1892,7 @@ class CliTests(TestCase):
             (("memory", "list", "--json"), "memories"),
             (("memory", "search", "--query", "json", "--json"), "memories"),
             (("route", "--question", "Can we close this plan?", "--json"), "route"),
+            (("agent", "setup", "codex", "--json"), "setup"),
             (("drift", "analyze", "--id", "drift-json-contract", "--source", str(drift_source), "--json"), "drift_report"),
         ]
 
