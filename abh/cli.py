@@ -18,7 +18,11 @@ from .core import (
     list_audits,
     list_memories,
     list_plans,
+    list_roadmap_items,
     load_attractor,
+    materialize_roadmap_item,
+    next_plan_id,
+    next_plan_sequence,
     plan_status_line,
     record_audit,
     record_verification,
@@ -39,7 +43,15 @@ def add_json_argument(parser: argparse.ArgumentParser) -> None:
 
 def command_name(args: argparse.Namespace) -> str:
     parts = [str(args.command)]
-    for attr in ("plan_command", "verify_command", "audit_command", "memory_command", "drift_command", "attractor_command"):
+    for attr in (
+        "plan_command",
+        "verify_command",
+        "audit_command",
+        "memory_command",
+        "drift_command",
+        "attractor_command",
+        "roadmap_command",
+    ):
         value = getattr(args, attr, None)
         if value:
             parts.append(str(value))
@@ -208,6 +220,26 @@ def build_parser() -> argparse.ArgumentParser:
     attractor_supersede.add_argument("--migration-strategy", required=True)
     add_json_argument(attractor_supersede)
     attractor_supersede.set_defaults(handler=handle_attractor_supersede)
+
+    roadmap_parser = subparsers.add_parser("roadmap", help="manage roadmap queue")
+    roadmap_sub = roadmap_parser.add_subparsers(dest="roadmap_command", required=True)
+
+    roadmap_list = roadmap_sub.add_parser("list", help="list roadmap queue items")
+    add_json_argument(roadmap_list)
+    roadmap_list.set_defaults(handler=handle_roadmap_list)
+
+    roadmap_next_id = roadmap_sub.add_parser("next-id", help="show next materialized plan id prefix")
+    add_json_argument(roadmap_next_id)
+    roadmap_next_id.set_defaults(handler=handle_roadmap_next_id)
+
+    roadmap_check = roadmap_sub.add_parser("check", help="check roadmap queue consistency")
+    add_json_argument(roadmap_check)
+    roadmap_check.set_defaults(handler=handle_roadmap_check)
+
+    roadmap_materialize = roadmap_sub.add_parser("materialize", help="materialize a roadmap item into the next plan id")
+    roadmap_materialize.add_argument("key")
+    add_json_argument(roadmap_materialize)
+    roadmap_materialize.set_defaults(handler=handle_roadmap_materialize)
 
     doctor_parser = subparsers.add_parser("doctor", help="check workspace consistency")
     add_json_argument(doctor_parser)
@@ -490,6 +522,65 @@ def handle_attractor_supersede(args: argparse.Namespace) -> int:
         )
         return 0
     print(f"superseded {old.id} -> {attractor.id}")
+    return 0
+
+
+def handle_roadmap_list(args: argparse.Namespace) -> int:
+    items = list_roadmap_items()
+    if args.json:
+        print_json_envelope(
+            ok=True,
+            command=command_name(args),
+            data={"items": [item.to_dict() for item in items], "total": len(items)},
+        )
+        return 0
+    for item in items:
+        plan_info = f" -> {item.plan_id}" if item.plan_id else ""
+        print(f"{item.key} [{item.status}]{plan_info} {item.title}")
+    print(f"\ntotal: {len(items)} roadmap item(s)")
+    return 0
+
+
+def handle_roadmap_next_id(args: argparse.Namespace) -> int:
+    sequence = next_plan_sequence()
+    plan_id = next_plan_id()
+    if args.json:
+        print_json_envelope(
+            ok=True,
+            command=command_name(args),
+            data={"next_plan_id": plan_id, "next_sequence": sequence},
+        )
+        return 0
+    print(plan_id)
+    return 0
+
+
+def handle_roadmap_check(args: argparse.Namespace) -> int:
+    from .core import check_plan_numbering, check_roadmap_queue
+
+    issues = check_plan_numbering() + check_roadmap_queue()
+    if args.json:
+        print_json_envelope(ok=not issues, command=command_name(args), data={"issues": issues})
+        return 0 if not issues else 1
+    if not issues:
+        print("roadmap: ok")
+        return 0
+    print("roadmap: found consistency issues")
+    for issue in issues:
+        print(f"- {issue}")
+    return 1
+
+
+def handle_roadmap_materialize(args: argparse.Namespace) -> int:
+    item, plan = materialize_roadmap_item(args.key)
+    if args.json:
+        print_json_envelope(
+            ok=True,
+            command=command_name(args),
+            data={"item": item.to_dict(), "plan": plan.to_dict()},
+        )
+        return 0
+    print(f"materialized {item.key} -> {plan.id}")
     return 0
 
 
