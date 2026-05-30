@@ -262,12 +262,24 @@ class DriftFinding:
     drift_type: str
     evidence: str
     recommendation: str
+    severity: str = "unknown"
+    confidence: str = "unknown"
+    rule_id: str = ""
+    matched_span: dict[str, Any] = field(default_factory=dict)
+    source_excerpt: str = ""
+    evidence_path: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "type": self.drift_type,
             "evidence": self.evidence,
             "recommendation": self.recommendation,
+            "severity": self.severity,
+            "confidence": self.confidence,
+            "rule_id": self.rule_id,
+            "matched_span": dict(self.matched_span),
+            "source_excerpt": self.source_excerpt,
+            "evidence_path": self.evidence_path,
         }
 
     @classmethod
@@ -276,6 +288,12 @@ class DriftFinding:
             drift_type=data["type"],
             evidence=data["evidence"],
             recommendation=data["recommendation"],
+            severity=data.get("severity", "unknown"),
+            confidence=data.get("confidence", "unknown"),
+            rule_id=data.get("rule_id", ""),
+            matched_span=dict(data.get("matched_span", {})),
+            source_excerpt=data.get("source_excerpt", ""),
+            evidence_path=data.get("evidence_path", ""),
         )
 
 

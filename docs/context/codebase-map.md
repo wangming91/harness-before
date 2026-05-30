@@ -21,10 +21,12 @@
 - `abh/audits.py` — audit request, record, reviewer metadata, rendering, and parsing.
 - `abh/audit_bundle.py` — audit bundle assembly from plan, verification, audit, and closure evidence state.
 - `abh/memory.py` — externalized memory records and search.
-- `abh/drift.py` — drift report creation and simple rule-based analysis.
+- `abh/drift.py` — drift report creation, local rule-based analysis, and Stage 6 drift quality signal metadata.
 - `abh/routing.py` — reading-order suggestions for questions.
 - `abh/roadmap.py` — stable roadmap queue, next plan id calculation, materialization, and numbering checks.
 - `abh/mcp_server.py` — MCP stdio adapter over the shared command contract and domain functions.
+
+Stage 6 quality work starts with `docs/architecture/quality-signals.md`. Runtime modules should consume that vocabulary before adding new drift, memory, route, `abh next`, or reporting fields.
 
 ## Test Surface
 
@@ -54,4 +56,4 @@
 - `abh route ...`
 - `abh doctor`
 
-Future agent-facing command families should extend `abh.commands` before or alongside their CLI/MCP adapters. Stage 4 command families are complete: `agent setup` is a read-only export surface; write/install behavior for agent config files remains a later confirmed-write slice. `hooks install` is the first local hook write surface and requires `--write --confirm`; it only manages `.git/hooks/pre-commit` files containing the ABH managed marker. `next` and `onboarding check` are read-only navigation surfaces and must not install hooks or write Agent config. Quickstart and recipes are documentation-only adoption surfaces; PyPI publication and release automation remain future work. `audit bundle` is a Stage 5 read-only audit preparation surface; it must not call models, record verdicts, transition plans, or close plans. `audit record` now carries declared reviewer context, independence, and verification basis metadata; `close` enforces an independent passing audit tied to the current fresh passing verification.
+Future agent-facing command families should extend `abh.commands` before or alongside their CLI/MCP adapters. Stage 4 command families are complete: `agent setup` is a read-only export surface; write/install behavior for agent config files remains a later confirmed-write slice. `hooks install` is the first local hook write surface and requires `--write --confirm`; it only manages `.git/hooks/pre-commit` files containing the ABH managed marker. `next` and `onboarding check` are read-only navigation surfaces and must not install hooks or write Agent config. Quickstart and recipes are documentation-only adoption surfaces; PyPI publication and release automation remain future work. `audit bundle` is a Stage 5 read-only audit preparation surface; it must not call models, record verdicts, transition plans, or close plans. `audit record` now carries declared reviewer context, independence, and verification basis metadata; `close` enforces an independent passing audit tied to the current fresh passing verification. Stage 6 should stay product-quality-first and agent-navigation-second: enrich drift and memory signals first, then let route, `abh next`, and future health reports consume those signals conservatively.

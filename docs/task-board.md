@@ -2,7 +2,7 @@
 
 ## 当前阶段
 
-阶段 5：真正独立审计（Done）；下一步：`stage6.drift-quality`
+阶段 6：漂移与记忆质量提升（Doing）；当前计划：`plan-040-drift-quality`
 
 ## 状态说明
 

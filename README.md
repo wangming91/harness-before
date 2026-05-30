@@ -330,7 +330,7 @@ abh drift analyze \
 abh memory search --type divergent_pattern --query dependency
 ```
 
-漂移分析基于关键词规则识别四类漂移：边界漂移、依赖漂移、测试漂移和术语漂移。
+漂移分析基于本地关键词规则识别四类漂移：边界漂移、依赖漂移、测试漂移和术语漂移。从 Stage 6 开始，JSON 和 MCP 输出中的 drift finding 会携带质量信号字段：`severity`、`confidence`、`rule_id`、`matched_span`、`source_excerpt` 和 `evidence_path`。这些字段用于先判断产品质量风险，再供后续 memory、route、`abh next` 和 health report 消费。
 
 从 v0.2.0 开始，`drift analyze` 支持 `--plan` 参数，以计划的 non-goals 为基线检测范围违规：
 
@@ -482,7 +482,7 @@ python3 -m abh.mcp_server
 - v0.3.0 发布准备由 `plan-026-v0-3-release-prep` 收口，release notes 见 `docs/releases/v0.3.0.md`
 - 阶段 4 Agent-First 吸引子入口层已完成：`plan-027-stage-4-attractor-entry-plan`、`plan-028-agent-first-command-contract`、`plan-029-attractor-registry`、`plan-030-roadmap-queue-and-plan-numbering`、`plan-031-truth-precedence-and-age-docs`、`plan-032-abh-init-active-attractor`、`plan-033-agent-contract-setup`、`plan-034-git-hooks-guardrails`、`plan-035-abh-next-and-onboarding-check` 和 `plan-036-quickstart-recipes-and-distribution` 均已完成；quickstart、recipes 和当前 git/editable 分发路径已纳入 Stage 4 adoption 入口
 - 阶段 5 独立审计支持已完成：`plan-037-audit-prompt-bundle` 已交付只读 `abh audit bundle <plan> --json`，用于生成审计提示词和证据清单；`plan-038-independent-audit-gate` 已把 audit context/source、independence 和 fresh verification basis 纳入 `abh audit record` 与 `abh close` 门禁。自动执行审计和真实身份校验仍属后续切片
-- 下一阶段入口是 `stage6.drift-quality`：提升 drift finding 的 severity、matched span、source excerpt 和 confidence 质量
+- 阶段 6 已启动：`plan-039-quality-signal-model` 定义 product-quality-first / agent-navigation-second 的质量信号模型；`plan-040-drift-quality` 正在把 drift finding 提升为带 severity、matched span、source excerpt 和 confidence 的质量信号
 - 未来路线图不再为未创建计划预写 `plan-033` 这类具体编号；未 materialize 的事项使用 `.abh/roadmap.json` 中的稳定 key，真实 plan id 只在 `abh roadmap materialize <key>` 时分配
 - 阶段 4 的目标不是普通 onboarding，而是让 Codex、Claude Code 和 MCP 客户端默认通过 JSON/非交互命令进入 active attractor -> plan -> verification -> audit -> memory 的轨迹控制回路；人类主要负责定义吸引子、批准写入和执行独立审计
 - 后续提升漂移分析精度：从关键词匹配升级到更高质量的证据提取

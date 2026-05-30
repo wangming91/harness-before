@@ -2110,6 +2110,70 @@ class CliTests(TestCase):
         self.assertEqual(code, 0, err)
         self.assertIn("mem-drift-001 [divergent_pattern]", out)
 
+    def test_drift_analyze_json_returns_quality_signal_metadata(self) -> None:
+        drift_source = self.root / "drift-quality.txt"
+        drift_source.write_text(
+            "Imported a remote database dependency even though the plan said no external database.\n",
+            encoding="utf-8",
+        )
+
+        code, out, err = self.run_cli(
+            "drift",
+            "analyze",
+            "--id",
+            "drift-quality-001",
+            "--source",
+            str(drift_source),
+            "--evidence",
+            "drift-quality.txt",
+            "--json",
+        )
+
+        self.assertEqual(code, 0, err)
+        payload = json.loads(out)
+        finding = payload["data"]["drift_report"]["findings"][0]
+        self.assertEqual(finding["type"], "dependency_drift")
+        self.assertEqual(finding["severity"], "high")
+        self.assertEqual(finding["confidence"], "high")
+        self.assertEqual(finding["rule_id"], "dependency_drift")
+        self.assertEqual(finding["evidence_path"], "drift-quality.txt")
+        self.assertEqual(finding["matched_span"]["text"], "database")
+        self.assertIn("remote database dependency", finding["source_excerpt"])
+        self.assertIn("Review plan non-goals", finding["recommendation"])
+
+    def test_drift_report_legacy_findings_remain_readable(self) -> None:
+        with Chdir(self.root):
+            write_json(
+                drift_json_path("drift-legacy"),
+                {
+                    "schema_version": "1",
+                    "id": "drift-legacy",
+                    "source": "legacy.txt",
+                    "findings": [
+                        {
+                            "type": "dependency_drift",
+                            "evidence": "matched keywords: database",
+                            "recommendation": "Review dependency drift.",
+                        }
+                    ],
+                    "evidence": [],
+                    "follow_ups": [],
+                    "created_at": "2026-01-01T00:00:00+00:00",
+                    "updated_at": "2026-01-01T00:00:00+00:00",
+                    "doc_path": "",
+                },
+            )
+
+        code, out, err = self.run_cli("drift", "analyze", "--id", "drift-new", "--source", __file__, "--json")
+        self.assertEqual(code, 0, err)
+
+        legacy_data = json.loads((self.root / ".abh" / "drift" / "drift-legacy.json").read_text(encoding="utf-8"))
+        legacy_report = DriftReport.from_dict(legacy_data)
+        finding = legacy_report.to_dict()["findings"][0]
+        self.assertEqual(finding["type"], "dependency_drift")
+        self.assertEqual(finding["severity"], "unknown")
+        self.assertEqual(finding["confidence"], "unknown")
+
     def test_plan_list_returns_all_plans(self) -> None:
         self.run_cli(
             "plan", "create",
@@ -2587,6 +2651,12 @@ class CliTests(TestCase):
         self.assertIn("boundary_drift", out)
         self.assertIn("plan non-goal violation", out)
 
+        report = json.loads((self.root / ".abh" / "drift" / "drift-plan-001.json").read_text(encoding="utf-8"))
+        finding = next(item for item in report["findings"] if item["rule_id"] == "plan_non_goal:plan-drift-baseline")
+        self.assertEqual(finding["severity"], "high")
+        self.assertEqual(finding["confidence"], "high")
+        self.assertEqual(finding["evidence_path"], str(drift_source))
+
 
 class McpServerTests(TestCase):
     def setUp(self) -> None:
@@ -2852,8 +2922,26 @@ class McpServerTests(TestCase):
 
     def test_mcp_drift_list_reads_existing_reports_without_writing(self) -> None:
         with Chdir(self.root):
-            report = DriftReport(id="drift-mcp-existing", source="source.txt")
-            write_json(drift_json_path(report.id), report.to_dict())
+            write_json(
+                drift_json_path("drift-mcp-existing"),
+                {
+                    "schema_version": "1",
+                    "id": "drift-mcp-existing",
+                    "source": "source.txt",
+                    "findings": [
+                        {
+                            "type": "dependency_drift",
+                            "evidence": "matched keywords: database",
+                            "recommendation": "Review dependency drift.",
+                        }
+                    ],
+                    "evidence": [],
+                    "follow_ups": [],
+                    "created_at": "2026-01-01T00:00:00+00:00",
+                    "updated_at": "2026-01-01T00:00:00+00:00",
+                    "doc_path": "",
+                },
+            )
 
         response = self.call_mcp(
             {
@@ -2868,6 +2956,9 @@ class McpServerTests(TestCase):
         self.assertTrue(envelope["ok"])
         self.assertEqual(envelope["data"]["total"], 1)
         self.assertEqual(envelope["data"]["drift_reports"][0]["id"], "drift-mcp-existing")
+        finding = envelope["data"]["drift_reports"][0]["findings"][0]
+        self.assertEqual(finding["severity"], "unknown")
+        self.assertEqual(finding["confidence"], "unknown")
 
     def test_mcp_errors_are_structured(self) -> None:
         unknown_response = self.call_mcp(
@@ -3145,4 +3236,8 @@ class McpServerTests(TestCase):
         envelope = response["result"]["structuredContent"]
         self.assertTrue(envelope["ok"])
         self.assertEqual(envelope["data"]["drift_report"]["id"], "drift-mcp-write")
+        finding = envelope["data"]["drift_report"]["findings"][0]
+        self.assertEqual(finding["severity"], "high")
+        self.assertEqual(finding["confidence"], "high")
+        self.assertIn("source_excerpt", finding)
         self.assertTrue((self.root / ".abh" / "drift" / "drift-mcp-write.json").exists())

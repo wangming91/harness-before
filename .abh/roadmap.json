@@ -387,47 +387,185 @@
       "plan_id": "plan-038-independent-audit-gate"
     },
     {
+      "key": "stage6.quality-signal-model",
+      "title": "Quality Signal Model",
+      "stage": "stage6",
+      "summary": "Define the Stage 6 quality signal vocabulary and consumption path before implementing drift, memory, route, and health-report upgrades.",
+      "attractor": "docs/architecture/attractors/abh-core-attractor.md",
+      "baseline": "Stage 5 closed the independent audit gate. Stage 6 should now make ABH see quality problems directly: product-quality signals first, agent navigation second. Existing drift, memory, route, and reporting plans need one shared signal model before runtime work begins.",
+      "goals": [
+        "Define shared quality signal concepts for drift, reusable memory, verification freshness, audit outcomes, and project health.",
+        "Update the Stage 6 roadmap queue so quality-signal-model precedes drift-quality, memory-index, and project-health-report.",
+        "Document how drift findings, memory entries, route ranking, abh next, and health reports consume the shared quality signal fields.",
+        "Keep this slice planning/docs-only so later runtime changes can be implemented behind a stable model."
+      ],
+      "non_goals": [
+        "Do not change runtime CLI, MCP, close, verification, audit, memory, route, or drift behavior in this slice.",
+        "Do not implement drift severity/confidence, memory indexing, route ranking, report commands, or abh next integration yet.",
+        "Do not introduce external services, LLM scoring, databases, release automation, or team policy."
+      ],
+      "exit_criteria": [
+        "A Stage 6 quality signal model doc exists and defines severity, confidence, evidence references, excerpts, relationship fields, status, and health aggregation semantics.",
+        "development-roadmap and task-board describe Stage 6 as product-quality-first and agent-navigation-second.",
+        "Agent Protocol or codebase map records which future command surfaces will consume quality signals.",
+        ".abh/roadmap.json contains the four ordered Stage 6 queue items without preassigned plan ids.",
+        "python3 -m unittest tests/test_cli.py -v passes.",
+        "python3 -m abh doctor passes.",
+        "python3 -m abh roadmap check --json passes.",
+        "git diff --check passes."
+      ],
+      "validation_checklist": [
+        "python3 -m unittest tests/test_cli.py -v",
+        "python3 -m abh doctor",
+        "git diff --check",
+        "python3 -m abh roadmap check --json",
+        "python3 -m abh plan status plan-039-quality-signal-model --json"
+      ],
+      "closure_evidence": [
+        "docs/architecture/quality-signals.md",
+        "docs/development-roadmap.md",
+        "docs/task-board.md",
+        "docs/architecture/agent-protocol.md",
+        "docs/context/codebase-map.md",
+        ".abh/roadmap.json",
+        "docs/plans/plan-039-quality-signal-model.md"
+      ],
+      "status": "materialized",
+      "plan_id": "plan-039-quality-signal-model"
+    },
+    {
       "key": "stage6.drift-quality",
       "title": "Drift Quality",
       "stage": "stage6",
-      "summary": "Improve drift findings with severity, matched spans, excerpts, and confidence.",
-      "attractor": "",
-      "baseline": "",
-      "goals": [],
-      "non_goals": [],
-      "exit_criteria": [],
-      "validation_checklist": [],
-      "closure_evidence": [],
-      "status": "queued",
-      "plan_id": null
+      "summary": "Upgrade drift findings from simple rule hits into quality signals with severity, matched spans, excerpts, confidence, and recommendations.",
+      "attractor": "docs/architecture/attractors/abh-core-attractor.md",
+      "baseline": "Current drift analysis is simple rule-based detection and plan non-goal checking. After the quality signal model is defined, drift findings should carry enough evidence for a human or agent to judge where the product is drifting and whether it needs action now.",
+      "goals": [
+        "Add structured drift finding metadata for severity, confidence, rule id, matched span, source excerpt, evidence path, and recommendation.",
+        "Preserve backward-compatible reads for existing drift reports.",
+        "Expose the enriched drift findings through CLI JSON output and MCP drift surfaces.",
+        "Document how drift quality signals should feed memory reuse, route ranking, project health, and abh next recommendations."
+      ],
+      "non_goals": [
+        "Do not replace the local rule-based drift engine with an LLM or external service.",
+        "Do not implement memory indexing, health reports, team policy, CI templates, or release automation in this slice.",
+        "Do not make drift findings automatically block plan close."
+      ],
+      "exit_criteria": [
+        "New drift reports include structured finding metadata for severity, confidence, matched span, excerpt, evidence, and recommendation.",
+        "Existing drift reports without the new fields remain readable.",
+        "abh drift analyze --json returns enriched findings in the standard JSON envelope.",
+        "MCP drift tools expose the same structured content.",
+        "Tests cover non-goal drift, generic drift rules, legacy drift reads, and JSON output."
+      ],
+      "validation_checklist": [
+        "python3 -m unittest tests/test_cli.py -v",
+        "python3 -m abh doctor",
+        "git diff --check",
+        "python3 -m abh roadmap check --json"
+      ],
+      "closure_evidence": [
+        "abh/models.py",
+        "abh/drift.py",
+        "abh/cli.py",
+        "abh/mcp_server.py",
+        "tests/test_cli.py",
+        "README.md",
+        "docs/architecture/quality-signals.md",
+        "docs/development-roadmap.md",
+        "docs/task-board.md",
+        "docs/context/codebase-map.md"
+      ],
+      "status": "materialized",
+      "plan_id": "plan-040-drift-quality"
     },
     {
       "key": "stage6.memory-index",
       "title": "Memory Index",
       "stage": "stage6",
-      "summary": "Add memory tags, deprecation status, and reverse links to plans and audits.",
-      "attractor": "",
-      "baseline": "",
-      "goals": [],
-      "non_goals": [],
-      "exit_criteria": [],
-      "validation_checklist": [],
-      "closure_evidence": [],
+      "summary": "Turn memory from keyword-searchable notes into reusable quality knowledge with tags, status, and reverse links to plans, audits, and drift.",
+      "attractor": "docs/architecture/attractors/abh-core-attractor.md",
+      "baseline": "Current memory supports add/list/search by type and keyword. Stage 6 needs memory records that can say whether an experience is still active, what it relates to, and when an agent should reuse it.",
+      "goals": [
+        "Add memory metadata for tags, status, related plans, related audits, related drift reports, and supersession.",
+        "Preserve backward-compatible reads for existing memory records.",
+        "Improve memory search/list output so agents can find reusable experience by relation and status, not only keyword.",
+        "Document how memory quality signals feed route ranking, health reports, and abh next recommendations."
+      ],
+      "non_goals": [
+        "Do not introduce vector search, embeddings, databases, or external services.",
+        "Do not migrate or rewrite all historical memory documents in this slice.",
+        "Do not implement health reports, team policy, or multi-repo sharing yet."
+      ],
+      "exit_criteria": [
+        "Memory JSON supports tags, status, related plan/audit/drift ids, and superseded_by with legacy defaults.",
+        "abh memory add can record the new metadata without breaking existing flags.",
+        "abh memory search/list --json can filter or expose status and relationship metadata.",
+        "Tests cover legacy reads, new metadata writes, search/list JSON, and Markdown rendering."
+      ],
+      "validation_checklist": [
+        "python3 -m unittest tests/test_cli.py -v",
+        "python3 -m abh doctor",
+        "git diff --check",
+        "python3 -m abh roadmap check --json"
+      ],
+      "closure_evidence": [
+        "abh/models.py",
+        "abh/memory.py",
+        "abh/cli.py",
+        "abh/mcp_server.py",
+        "tests/test_cli.py",
+        "README.md",
+        "docs/architecture/quality-signals.md",
+        "docs/development-roadmap.md",
+        "docs/task-board.md",
+        "docs/context/codebase-map.md"
+      ],
       "status": "queued",
       "plan_id": null
     },
     {
-      "key": "stage6.reporting",
-      "title": "Reporting",
+      "key": "stage6.project-health-report",
+      "title": "Project Health Report",
       "stage": "stage6",
-      "summary": "Report plan close rate, audit rejection rate, repeated drift, and memory hits.",
-      "attractor": "",
-      "baseline": "",
-      "goals": [],
-      "non_goals": [],
-      "exit_criteria": [],
-      "validation_checklist": [],
-      "closure_evidence": [],
+      "summary": "Aggregate quality signals into a product-quality-first health report and feed the most important risks into agent navigation.",
+      "attractor": "docs/architecture/attractors/abh-core-attractor.md",
+      "baseline": "After drift and memory emit structured quality signals, ABH should summarize project health: where quality is degrading, which risks repeat, and what an agent should inspect next.",
+      "goals": [
+        "Add a read-only project health report command that aggregates plan, verification, audit, drift, memory, doctor, and roadmap signals.",
+        "Report plan close rate, stale verification count, audit rejection/need-info count, repeated drift, reusable memory hits, and top unresolved quality risks.",
+        "Keep the primary health posture product-quality-first, with agent navigation as a secondary consumer.",
+        "Expose health report data through JSON and document how abh next may consume top risks later."
+      ],
+      "non_goals": [
+        "Do not add a Web UI, external dashboard, database, LLM scorer, or team policy engine.",
+        "Do not make health score automatically block close or release.",
+        "Do not implement Stage 7 CI templates or release automation in this slice."
+      ],
+      "exit_criteria": [
+        "abh report health --json returns health summary, metrics, top risks, and recommended inspections.",
+        "The report uses structured drift and memory quality signals when present and degrades gracefully when absent.",
+        "The command is read-only and registered in the Agent-First command contract.",
+        "Tests cover empty repositories, the current repository shape, repeated drift, stale verification, and JSON envelope output."
+      ],
+      "validation_checklist": [
+        "python3 -m unittest tests/test_cli.py -v",
+        "python3 -m abh doctor",
+        "git diff --check",
+        "python3 -m abh roadmap check --json"
+      ],
+      "closure_evidence": [
+        "abh/reporting.py",
+        "abh/cli.py",
+        "abh/commands.py",
+        "abh/mcp_server.py",
+        "tests/test_cli.py",
+        "README.md",
+        "docs/architecture/quality-signals.md",
+        "docs/development-roadmap.md",
+        "docs/task-board.md",
+        "docs/context/codebase-map.md"
+      ],
       "status": "queued",
       "plan_id": null
     },

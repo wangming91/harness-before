@@ -12,34 +12,59 @@ from .storage import drift_doc_path, drift_json_path, drift_dir, ensure_workspac
 DRIFT_RULES: dict[str, dict[str, object]] = {
     "boundary_drift": {
         "keywords": ("boundary", "module boundary", "moved", "mixed", "plan manager", "audit logic", "边界", "混入"),
+        "severity": "medium",
         "recommendation": "Create a follow-up to restore ownership boundaries or update the attractor if the boundary changed intentionally.",
     },
     "dependency_drift": {
-        "keywords": ("dependency", "database", "remote", "external", "service", "package", "依赖", "数据库", "外部"),
+        "keywords": ("database", "external", "service", "package", "dependency", "remote", "依赖", "数据库", "外部"),
+        "severity": "high",
         "recommendation": "Review plan non-goals and dependency rules before accepting the new dependency.",
     },
     "test_drift": {
         "keywords": ("skip test", "skipped tests", "without tests", "no test", "测试跳过", "未测试"),
+        "severity": "high",
         "recommendation": "Add or restore verification coverage before closing the plan.",
     },
     "terminology_drift": {
         "keywords": ("renamed", "terminology", "term", "prepared", "ready", "术语", "重命名"),
+        "severity": "medium",
         "recommendation": "Align terminology with canonical docs or record an explicit migration.",
     },
 }
 
 
-def analyze_drift_text(text: str) -> list[DriftFinding]:
+def matched_span(text: str, lowered: str, keyword: str) -> dict[str, object]:
+    start = lowered.find(keyword.lower())
+    if start < 0:
+        return {}
+    end = start + len(keyword)
+    return {"start": start, "end": end, "text": text[start:end]}
+
+
+def excerpt_for_span(text: str, start: int, end: int, radius: int = 80) -> str:
+    excerpt_start = max(0, start - radius)
+    excerpt_end = min(len(text), end + radius)
+    return " ".join(text[excerpt_start:excerpt_end].split())
+
+
+def analyze_drift_text(text: str, evidence_path: str = "") -> list[DriftFinding]:
     lowered = text.lower()
     findings: list[DriftFinding] = []
     for drift_type, rule in DRIFT_RULES.items():
         matched = [keyword for keyword in rule["keywords"] if keyword.lower() in lowered]
         if matched:
+            span = matched_span(text, lowered, str(matched[0]))
             findings.append(
                 DriftFinding(
                     drift_type=drift_type,
                     evidence=f"matched keywords: {', '.join(matched)}",
                     recommendation=str(rule["recommendation"]),
+                    severity=str(rule.get("severity", "medium")),
+                    confidence="high",
+                    rule_id=drift_type,
+                    matched_span=span,
+                    source_excerpt=excerpt_for_span(text, int(span.get("start", 0)), int(span.get("end", 0))) if span else "",
+                    evidence_path=evidence_path,
                 )
             )
     return findings
@@ -70,7 +95,9 @@ def analyze_drift(
     if not source_path.exists():
         raise AbhError(f"drift source not found: {source}")
     source_text = source_path.read_text(encoding="utf-8")
-    findings = analyze_drift_text(source_text)
+    evidence_values = list(evidence or [source])
+    primary_evidence = evidence_values[0] if evidence_values else source
+    findings = analyze_drift_text(source_text, evidence_path=primary_evidence)
     if plan_id:
         plan = load_plan(plan_id, cwd)
         negation_prefixes = ("不", "不要", "无需", "禁止", "避免", "no ", "not ")
@@ -95,6 +122,16 @@ def analyze_drift(
                                 drift_type=dt,
                                 evidence=f"plan non-goal violation: '{non_goal}' matched keywords {matched}",
                                 recommendation=f"Review plan '{plan_id}' non-goal: {non_goal}. Consider updating plan or source.",
+                                severity="high",
+                                confidence="high",
+                                rule_id=f"plan_non_goal:{plan_id}",
+                                matched_span=matched_span(source_text, lowered, matched[0]),
+                                source_excerpt=excerpt_for_span(
+                                    source_text,
+                                    int(matched_span(source_text, lowered, matched[0]).get("start", 0)),
+                                    int(matched_span(source_text, lowered, matched[0]).get("end", 0)),
+                                ),
+                                evidence_path=primary_evidence,
                             )
                         )
                         break
@@ -103,7 +140,7 @@ def analyze_drift(
         id=drift_id,
         source=source,
         findings=findings,
-        evidence=list(evidence or [source]),
+        evidence=evidence_values,
         follow_ups=follow_ups,
         doc_path=str(drift_doc_path(drift_id, cwd)),
     )
@@ -132,11 +169,11 @@ def render_drift_markdown(report: DriftReport) -> str:
 
     if report.findings:
         finding_lines = "\n".join(
-            f"| {finding.drift_type} | {finding.evidence} | {finding.recommendation} |"
+            f"| {finding.drift_type} | {finding.severity} | {finding.confidence} | {finding.evidence} | {finding.source_excerpt} | {finding.recommendation} |"
             for finding in report.findings
         )
     else:
-        finding_lines = "|  |  |  |"
+        finding_lines = "|  |  |  |  |  |  |"
     return (
         f"# Drift: {report.id}\n\n"
         "## Metadata\n\n"
@@ -147,8 +184,8 @@ def render_drift_markdown(report: DriftReport) -> str:
         "## Evidence\n\n"
         f"{bullet_lines(report.evidence)}\n\n"
         "## Findings\n\n"
-        "| Type | Evidence | Recommendation |\n"
-        "| --- | --- | --- |\n"
+        "| Type | Severity | Confidence | Evidence | Excerpt | Recommendation |\n"
+        "| --- | --- | --- | --- | --- | --- |\n"
         f"{finding_lines}\n\n"
         "## Follow-Ups\n\n"
         f"{bullet_lines(report.follow_ups)}\n"

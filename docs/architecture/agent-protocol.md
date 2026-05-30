@@ -245,6 +245,13 @@ This is the main convenience layer for agents. Agents should not have to memoriz
 - `plan-036-quickstart-recipes-and-distribution`: completed; materialized from `stage4.quickstart-recipes-and-distribution` and documents quickstart, recipes, and current git/editable distribution paths.
 - `plan-037-audit-prompt-bundle`: completed; materialized from `stage5.audit-prompt-bundle` and adds a read-only `abh audit bundle <plan> --json` surface for independent audit prompts and evidence paths.
 - `plan-038-independent-audit-gate`: completed; materialized from `stage5.independent-audit-gate` and adds audit verdict metadata plus close-time independent/fresh verification checks.
+- `plan-039-quality-signal-model`: in progress; materialized from `stage6.quality-signal-model` and defines the product-quality-first, agent-navigation-second signal model consumed by future drift, memory, route, `abh next`, and health-report surfaces.
+
+Stage 6 quality signal direction:
+
+- Drift, memory, verification, audit, and health report outputs should share severity, confidence, evidence reference, excerpt, relationship, status, and recommendation vocabulary.
+- Product-quality diagnosis is the primary consumer: ABH should identify where quality is degrading before it tells an agent what to do next.
+- Agent navigation is the secondary consumer: future `abh next --json` behavior may use unresolved quality signals to recommend inspections, but it must not replace audit judgment or close gates.
 
 Current setup export MVP:
 
